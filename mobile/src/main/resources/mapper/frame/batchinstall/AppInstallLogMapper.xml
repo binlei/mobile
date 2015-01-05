@@ -1,0 +1,603 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jshuabo.mobile.server.dao.batchinstall.IAppInstallLogMapper">
+
+	<resultMap id="appInstallLogResultMap" type="AppInstallLog">
+		<id column="ID" property="id" jdbcType="BIGINT" />
+		<result column="IMEI" property="imei" jdbcType="VARCHAR" />
+		<result column="MAC" property="mac" jdbcType="VARCHAR" />
+		<result column="BLAND" property="bland" jdbcType="VARCHAR"/>
+		<result column="MODEL" property="model" jdbcType="VARCHAR" />
+		<result column="APP_INFO_ID" property="appInfoId" jdbcType="BIGINT" />
+		<result column="APP_NAME" property="appName" jdbcType="VARCHAR" />
+		<result column="APP_PACKAGE_INFO_ID" property="appPackageInfoId" jdbcType="BIGINT" />
+		<result column="APP_PACKAGE_INFO_NAME" property="appPackageInfoName" jdbcType="VARCHAR" />
+		<result column="INSTALL_TIME" property="installTime" jdbcType="VARCHAR" />
+		<result column="INSTALL_STATUS" property="installStatus" jdbcType="VARCHAR" />
+		<result column="USER_ID" property="userId" jdbcType="BIGINT" />
+		<result column="USER_NAME" property="userName" jdbcType="VARCHAR" />
+		<result column="ORG_ID" property="orgId" jdbcType="BIGINT" />
+		<result column="ORG_NAME" property="orgName" jdbcType="VARCHAR" />
+		<result column="IP" property="ip" jdbcType="VARCHAR" /> 
+		<result column="DEV_SERIAL" property="devSerial" jdbcType="VARCHAR" /> 
+
+		<result property="info.creatorId" column="CREATOR_ID" />
+		<result property="info.creator" column="CREATOR" />
+		<result property="info.createdTime" column="CREATED_TIME" />
+		<result property="info.lastOperatorId" column="LAST_OPERATOR_ID" />
+		<result property="info.lastOperator" column="LAST_OPERATOR" />
+		<result property="info.lastOperatedTime" column="LAST_OPERATED_TIME" />
+
+	</resultMap>
+	
+<!-- 	<sql id="createTable">
+	<![CDATA[
+			CREATE TABLE `t_app_install_log` (
+				  `ID` bigint(20) NOT NULL PRIMARY KEY auto_increment,
+				  `IMEI` varchar(255)   default NULL,
+				  `MAC` varchar(255)   default NULL,
+				  `BLAND` varchar(255)   default NULL,
+				  `MODEL` varchar(255)   default NULL,
+				  `APP_INFO_ID` bigint(20) default NULL,
+				  `APP_NAME` varchar(255)   default NULL,
+				  `APP_PACKAGE_INFO_ID` bigint(20) default NULL,
+				  `APP_PACKAGE_INFO_NAME` varchar(255)   default NULL,
+				  `INSTALL_TIME` VARCHAR default NULL,
+				  `INSTALL_STATUS` varchar(255)   default NULL,
+				  `USER_ID` bigint(20) default NULL,
+				  `USER_NAME` varchar(255)   default NULL,
+				  `ORG_ID` bigint(20) default NULL,
+				  `ORG_NAME` varchar(255)   default NULL,
+				  `CREATED_TIME` VARCHAR(255) default NULL,
+				  `CREATOR_ID` bigint(20) default NULL,
+				  `CREATOR` varchar(255)   default NULL,
+				  `LAST_OPERATOR_ID` bigint(20) default NULL,
+				  `LAST_OPERATOR` varchar(255)   default NULL,
+				  `LAST_OPERATED_TIME` VARCHAR(255) default NULL,
+				  `IP` varchar(255) default NULL,
+				  PRIMARY KEY  (`ID`)
+				) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+			
+	]]>
+	</sql> -->
+
+	<sql id="Base_Column_List">
+		ID, IMEI, MAC, BLAND,MODEL, APP_INFO_ID, APP_NAME,
+		APP_PACKAGE_INFO_ID,
+		APP_PACKAGE_INFO_NAME,
+		INSTALL_TIME,
+		INSTALL_STATUS, USER_ID, USER_NAME, ORG_ID, ORG_NAME, CREATED_TIME,
+		CREATOR_ID, CREATOR, LAST_OPERATOR_ID, LAST_OPERATOR,
+		LAST_OPERATED_TIME,IP
+	</sql>
+
+	<select id="page" parameterType="map" resultType="AppInstallLog" resultMap="appInstallLogResultMap">
+		select 
+			ID, IMEI, MAC, BLAND,MODEL, APP_INFO_ID, APP_NAME,
+			APP_PACKAGE_INFO_ID,
+			APP_PACKAGE_INFO_NAME,
+			DATE_FORMAT(INSTALL_TIME,'%Y-%m-%d %H:%i') 'INSTALL_TIME',
+			INSTALL_STATUS, USER_ID, USER_NAME, ORG_ID, ORG_NAME, CREATED_TIME,
+			CREATOR_ID, CREATOR, LAST_OPERATOR_ID, LAST_OPERATOR,
+			LAST_OPERATED_TIME,IP
+		from  t_app_install_log where 1=1
+		<if test="imei != '' and imei != null">
+			AND IMEI = #{imei}
+		</if>
+		<if test="userName != '' and userName != null ">
+			AND USER_NAME LIKE CONCAT('%',#{userName},'%' )
+		</if>
+		<if test="model != ''">
+			AND MODEL  LIKE CONCAT('%',#{model},'%' )
+		</if>
+		<if test="bland != ''">
+			AND BLAND LIKE CONCAT('%',#{bland},'%' )
+		</if>
+		<if test="appName != ''">
+			AND APP_NAME LIKE CONCAT('%',#{appName},'%' )
+		</if>
+		<if test="appPackageName != ''">
+			AND APP_PACKAGE_INFO_NAME LIKE CONCAT('%',#{appPackageName},'%' )
+		</if>
+		<if test="installStatus != null and installStatus != ''">
+			AND INSTALL_STATUS = #{installStatus}
+		</if>
+		<if test="orgIds != null">
+			AND ORG_ID IN
+			<foreach collection="orgIds" item="orgId" open="(" separator="," close=")" >
+				#{orgId}
+			</foreach>
+		</if>
+		<if test="organizationId != 1 and organizationId != null and organizationId !=''">
+			AND ORG_ID = #{organizationId}
+		</if>
+		<if test="installStartTime != null and installStartTime !=''">
+			AND INSTALL_TIME &gt;= CONCAT(#{installStartTime},' 00:00:00' )
+		</if>
+		<if test="installEndTime != null and installEndTime !=''">
+			AND INSTALL_TIME &lt;= CONCAT(#{installEndTime},' 23:59:59' )
+		</if>
+		<if test="sortOrder != null">
+			ORDER BY ${sortOrder}
+		</if>
+		<if test="sortOrder == null">
+			ORDER BY INSTALL_TIME desc
+		</if>
+		LIMIT #{offset}, #{rows}
+	</select>
+
+	<select id="total" parameterType="map" resultType="Long">
+		SELECT count(*) FROM t_app_install_log WHERE 1=1
+		<if test="imei != '' and imei != null">
+			AND IMEI = #{imei}
+		</if>
+		<if test="userName != '' and userName != null ">
+			AND USER_NAME LIKE CONCAT('%',#{userName},'%' )
+		</if>
+		<if test="model != ''">
+			AND MODEL  LIKE CONCAT('%',#{model},'%' )
+		</if>
+		<if test="bland != ''">
+			AND BLAND LIKE CONCAT('%',#{bland},'%' )
+		</if>
+		<if test="appName != ''">
+			AND APP_NAME LIKE CONCAT('%',#{appName},'%' )
+		</if>
+		<if test="appPackageName != ''">
+			AND APP_PACKAGE_INFO_NAME LIKE CONCAT('%',#{appPackageName},'%' )
+		</if>
+		<if test="installStatus != null and installStatus != ''">
+			AND INSTALL_STATUS = #{installStatus}
+		</if>
+		<if test="organizationId != 1 and organizationId != null and organizationId !=''">
+			AND ORG_ID = #{organizationId}
+		</if>
+		<if test="orgIds != null">
+			AND ORG_ID IN
+			<foreach collection="orgIds" item="orgId" open="(" separator="," close=")" >
+				#{orgId,jdbcType=BIGINT}
+			</foreach>
+		</if>
+		<if test="installStartTime != null and installStartTime !=''">
+			AND INSTALL_TIME &gt;= CONCAT(#{installStartTime},' 00:00:00' )
+		</if>
+		<if test="installEndTime != null and installEndTime !=''">
+			AND INSTALL_TIME &lt;= CONCAT(#{installEndTime},' 23:59:59' )
+		</if>
+	</select>
+
+	<select id="load" resultMap="appInstallLogResultMap"
+		parameterType="java.lang.Long">
+		select
+		<include refid="Base_Column_List" />
+		from t_app_install_log
+		where ID = #{id,jdbcType=BIGINT}
+	</select>
+
+	<delete id="delete" parameterType="java.lang.Long">
+
+		delete from t_app_install_log
+		where ID = #{id,jdbcType=BIGINT}
+	</delete>
+
+	<insert id="save" parameterType="AppInstallLog">
+
+		insert into t_app_install_log
+		(ID, IMEI, MAC,
+		MODEL, APP_INFO_ID, APP_NAME,
+		APP_PACKAGE_INFO_ID,
+		APP_PACKAGE_INFO_NAME, INSTALL_TIME,
+		INSTALL_STATUS, USER_ID,
+		USER_NAME,
+		ORG_ID, ORG_NAME,IP , CREATED_TIME,
+		CREATOR_ID, CREATOR)
+		values
+		(#{id,jdbcType=BIGINT}, #{imei,jdbcType=VARCHAR},
+		#{mac,jdbcType=VARCHAR},
+		#{bland,jdbcType=VARCHAR},
+		#{model,jdbcType=VARCHAR},
+		#{appInfoId,jdbcType=BIGINT}, #{appName,jdbcType=VARCHAR},
+		#{appPackageInfoId,jdbcType=BIGINT},
+		#{appPackageInfoName,jdbcType=VARCHAR}, #{installTime,jdbcType=VARCHAR},
+		#{installStatus,jdbcType=VARCHAR}, #{userId,jdbcType=BIGINT},
+		#{userName,jdbcType=VARCHAR},
+		#{orgId,jdbcType=BIGINT},
+		#{orgName,jdbcType=VARCHAR}, #{createdTime,jdbcType=VARCHAR},
+		#{creatorId,jdbcType=BIGINT}, #{creator,jdbcType=VARCHAR},
+		#{lastOperatorId,jdbcType=BIGINT},
+		#{lastOperator,jdbcType=VARCHAR},
+		#{lastOperatedTime,jdbcType=VARCHAR},
+		#{ip,jdbcType=VARCHAR},#{createdTime,jdbcType=DATE}, 
+      	#{creatorId,jdbcType=BIGINT}, #{creator,jdbcType=VARCHAR}
+		)
+	</insert>
+
+	<update id="update" parameterType="AppInstallLog">
+		update t_app_install_log
+		set
+		IMEI = #{imei,jdbcType=VARCHAR},
+		MAC =
+		#{mac,jdbcType=VARCHAR},
+		BLAND =
+		#{bland,jdbcType=VARCHAR},
+		MODEL =
+		#{model,jdbcType=VARCHAR},
+		APP_INFO_ID
+		= #{appInfoId,jdbcType=BIGINT},
+		APP_NAME = #{appName,jdbcType=VARCHAR},
+		APP_PACKAGE_INFO_ID =
+		#{appPackageInfoId,jdbcType=BIGINT},
+		APP_PACKAGE_INFO_NAME =
+		#{appPackageInfoName,jdbcType=VARCHAR},
+		INSTALL_TIME =
+		#{installTime,jdbcType=VARCHAR},
+		INSTALL_STATUS =
+		#{installStatus,jdbcType=VARCHAR},
+		USER_ID = #{userId,jdbcType=BIGINT},
+		USER_NAME = #{userName,jdbcType=VARCHAR},
+		ORG_ID =
+		#{orgId,jdbcType=BIGINT},
+		ORG_NAME = #{orgName,jdbcType=VARCHAR},
+		CREATED_TIME = #{createdTime,jdbcType=VARCHAR},
+		CREATOR_ID =
+		#{creatorId,jdbcType=BIGINT},
+		CREATOR = #{creator,jdbcType=VARCHAR},
+		LAST_OPERATOR_ID = #{lastOperatorId,jdbcType=BIGINT},
+		LAST_OPERATOR =
+		#{lastOperator,jdbcType=VARCHAR},
+		LAST_OPERATED_TIME = #{lastOperatedTime,jdbcType=VARCHAR},
+		IP = #{ip,jdbcType=VARCHAR}
+		where ID = #{id,jdbcType=BIGINT}
+	</update>
+	
+	<select id="appStatisticsTest"  parameterType="map" resultType="java.util.HashMap">
+		select date_format(INSTALL_TIME,'%Y-%m-%d') as yu,count(DISTINCT IMEI) as count  from t_app_install_log  WHERE 1=1
+		<if test="imei != '' and imei != null">
+			AND IMEI  =  #{imei}
+		</if>
+		<if test="bland != '' and bland != null">
+			AND MODEL  =  #{bland}
+		</if>
+		<if test="model != '' and model != null">
+			AND MODEL  =  #{model}
+		</if>
+		<if test="appName != '' and appName != null">
+			AND APP_NAME  =  #{appName}
+		</if>
+		<if test="userName != '' and userName != null ">
+			AND USER_NAME = #{userName}
+		</if>
+		<if test="appPackageName != '' and appPackageName != null">
+			AND APP_PACKAGE_INFO_NAME  =  #{appPackageName}
+		</if>
+		<if test="installStatus != null and installStatus != ''">
+			AND INSTALL_STATUS = #{installStatus}
+		</if>
+		<if test="orgList != null">
+			AND ORG_ID IN
+			<foreach collection="orgList" item="orgid" open="(" separator="," close=")" >
+				#{orgid}
+			</foreach>
+		</if>
+		<if test="organizationId != 1 and organizationId != null and organizationId !=''">
+			AND ORG_ID = #{organizationId}
+		</if>
+		<if test="installStartTime != null and installStartTime !=''">
+			<![CDATA[
+			AND INSTALL_TIME >= CONCAT(#{installStartTime},' 00:00:00' )
+			]]>
+		</if>
+		<if test="installEndTime != null and installEndTime !=''">
+			<![CDATA[
+			AND INSTALL_TIME <= CONCAT(#{installEndTime},' 23:59:59' )
+			]]>
+		</if>
+		GROUP BY date_format(INSTALL_TIME,'%Y-%m-%d')  ORDER BY INSTALL_TIME
+	</select>
+	
+	<select id="queryAll" parameterType="map" resultType="AppInstallLog"
+		resultMap="appInstallLogResultMap">
+		select ID, IMEI, MAC, BLAND,MODEL, APP_INFO_ID, APP_NAME,
+			APP_PACKAGE_INFO_ID,
+			APP_PACKAGE_INFO_NAME,
+			DATE_FORMAT(INSTALL_TIME,'%Y-%m-%d %H:%i') 'INSTALL_TIME',
+			INSTALL_STATUS, USER_ID, USER_NAME, ORG_ID, ORG_NAME, CREATED_TIME,
+			CREATOR_ID, CREATOR, LAST_OPERATOR_ID, LAST_OPERATOR,
+			LAST_OPERATED_TIME,IP  from t_app_install_log where 1=1
+			AND IMEI = #{imei}
+		<if test="model != '' and model != null">
+			AND MODEL = #{model}
+		</if>
+		<if test="appName != '' and appName != null">
+			AND APP_NAME  = #{appName}
+		</if>
+		<if test="userName != '' and userName != null ">
+			AND USER_NAME = #{userName}
+		</if>
+		<if test="appPackageName != '' and appPackageName != null">
+			AND APP_PACKAGE_INFO_NAME =  #{appPackageName}
+		</if>
+		<if test="installStatus != null and installStatus != ''">
+			AND INSTALL_STATUS = #{installStatus}
+		</if>
+		<if test="orgList != null">
+			AND ORG_ID IN
+			<foreach collection="orgList" item="orgid" open="(" separator="," close=")" >
+				#{orgid}
+			</foreach>
+		</if>
+		<if test="organizationId != 1 and organizationId != null and organizationId !=''">
+			AND ORG_ID = #{organizationId}
+		</if>
+		<if test="installStartTime != null and installStartTime !=''">
+			AND INSTALL_TIME &gt;= CONCAT(#{installStartTime},' 00:00:00' )
+		</if>
+		<if test="installEndTime != null and installEndTime !=''">
+			AND INSTALL_TIME &lt;= CONCAT(#{installEndTime},' 23:59:59' )
+		</if>
+		<if test="sortOrder != null">
+			ORDER BY ${sortOrder}
+		</if>
+		LIMIT 0,100000
+	</select>
+	
+	<select id="exprot2Excel" resultMap="appInstallLogResultMap" parameterType="Map">
+		select ID, IMEI,DEV_SERIAL, MAC, BLAND,MODEL, APP_INFO_ID, APP_NAME,
+			APP_PACKAGE_INFO_ID,
+			APP_PACKAGE_INFO_NAME,
+			DATE_FORMAT(INSTALL_TIME,'%Y-%m-%d %H:%i') 'INSTALL_TIME',
+			INSTALL_STATUS, USER_ID, USER_NAME, ORG_ID, ORG_NAME, CREATED_TIME,
+			CREATOR_ID, CREATOR, LAST_OPERATOR_ID, LAST_OPERATOR,
+			LAST_OPERATED_TIME,IP  from t_app_install_log 
+		WHERE 1=1
+		<if test="imei != '' and imei != null">
+			AND IMEI LIKE CONCAT('%',#{imei},'%' )
+		</if>
+		<if test="userName != '' and userName != null ">
+			AND USER_NAME LIKE CONCAT('%',#{userName},'%' )
+		</if>
+		<if test="model != '' and model != null">
+			AND MODEL  LIKE CONCAT('%',#{model},'%' )
+		</if>
+		<if test="bland != '' and bland != null">
+			AND BLAND LIKE CONCAT('%',#{bland},'%' )
+		</if>
+		<if test="appName != '' and appName != null">
+			AND APP_NAME LIKE CONCAT('%',#{appName},'%' )
+		</if>
+		<if test="appPackageName != '' and appPackageName != null">
+			AND APP_PACKAGE_INFO_NAME LIKE CONCAT('%',#{appPackageName},'%' )
+		</if>
+		<if test="installStatus != null and installStatus != ''">
+			AND INSTALL_STATUS = #{installStatus}
+		</if>
+		<if test="orgList != null">
+			AND ORG_ID IN
+			<foreach collection="orgList" item="orgid" open="(" separator="," close=")" >
+				#{orgid}
+			</foreach>
+		</if>
+		<if test="organizationId != 1 and organizationId != null and organizationId !=''">
+			AND ORG_ID = #{organizationId}
+		</if>
+		<if test="installStartTime != null and installStartTime !=''">
+			AND INSTALL_TIME &gt;= CONCAT(#{installStartTime},' 00:00:00' )
+		</if>
+		<if test="installEndTime != null and installEndTime !=''">
+			AND INSTALL_TIME &lt;= CONCAT(#{installEndTime},' 23:59:59' )
+		</if>
+		LIMIT #{offset}, #{rows}
+	</select>
+	
+	<select id="exprotPageData" resultType="Map" parameterType="Map">
+		select MAX(ID) 'MAX',MIN(ID) 'MIN',COUNT(ID) 'COUNT' from t_app_install_log WHERE 1=1
+			<if test="imei != '' and imei != null">
+				AND IMEI LIKE CONCAT('%',#{imei},'%' )
+			</if>
+			<if test="userName != '' and userName != null ">
+				AND USER_NAME LIKE CONCAT('%',#{userName},'%' )
+			</if>
+			<if test="model != '' and model != null">
+				AND MODEL  LIKE CONCAT('%',#{model},'%' )
+			</if>
+			<if test="bland != '' and bland != null">
+				AND BLAND LIKE CONCAT('%',#{bland},'%' )
+			</if>
+			<if test="appName != '' and appName != null">
+				AND APP_NAME LIKE CONCAT('%',#{appName},'%' )
+			</if>
+			<if test="appPackageName != '' and appPackageName != null">
+				AND APP_PACKAGE_INFO_NAME LIKE CONCAT('%',#{appPackageName},'%' )
+			</if>
+			<if test="installStatus != null and installStatus != ''">
+				AND INSTALL_STATUS = #{installStatus}
+			</if>
+			<if test="orgList != null">
+				AND ORG_ID IN
+				<foreach collection="orgList" item="orgid" open="(" separator="," close=")" >
+					#{orgid}
+				</foreach>
+			</if>
+			<if test="organizationId != 1 and organizationId != null and organizationId !=''">
+				AND ORG_ID = #{organizationId}
+			</if>
+			<if test="installStartTime != null and installStartTime !=''">
+				AND INSTALL_TIME &gt;= CONCAT(#{installStartTime},' 00:00:00' )
+			</if>
+			<if test="installEndTime != null and installEndTime !=''">
+				AND INSTALL_TIME &lt;= CONCAT(#{installEndTime},' 23:59:59' )
+			</if>
+	<!-- 		<if test="installEndTime == '' and installStartTime == '' and organizationId == null">
+				LIMIT 0
+			</if> -->
+	</select>
+	
+	<select id="queryAppListByImei"  parameterType="map" resultType="java.util.HashMap">
+		select DISTINCT APP_NAME  from t_app_install_log  WHERE 1=1
+		<if test="imei != '' and imei != null">
+			AND IMEI = #{imei}
+		</if>
+	</select>
+	
+	<select id="queryDateData" parameterType="map" resultType="java.util.HashMap">
+		SELECT BLAND,MODEL,ORG_NAME,count(DISTINCT IMEI) as AMOUNT FROM t_app_install_log WHERE 1=1
+		<if test="dayNum != '' and dayNum != null">
+			AND date_format(INSTALL_TIME,'%Y-%m-%d') =
+			date_format(#{dayNum},'%Y-%m-%d')
+		</if>
+		<if test="imei != '' and imei != null">
+			AND IMEI #{imei}
+		</if>
+		<if test="model != '' and model != null">
+			AND MODEL #{model}
+		</if>
+		<if test="appName != '' and appName != null">
+			AND APP_NAME #{appName}
+		</if>
+		<if test="appPackageName != '' and appPackageName != null">
+			AND APP_PACKAGE_INFO_NAME #{appPackageName}
+		</if>
+		<if test="installStatus != null and installStatus != ''">
+			AND INSTALL_STATUS = #{installStatus}
+		</if>
+		<if test="orgList != null">
+			AND ORG_ID IN
+			<foreach collection="orgList" item="orgid" open="(" separator="," close=")" >
+				#{orgid}
+			</foreach>
+		</if>
+		<if test="organizationId != 1 and organizationId != null and organizationId !=''">
+			AND ORG_ID = #{organizationId}
+		</if>
+		GROUP BY MODEL ORDER BY BLAND;
+	</select>
+	
+	<select id="queryMonData" parameterType="map" resultType="Long">
+		SELECT count(DISTINCT IMEI) FROM t_app_install_log WHERE 1=1
+		<if test="dayNum != ''">
+			AND date_format(INSTALL_TIME,'%Y-%m') =
+			date_format(#{dayNum},'%Y-%m')
+		</if>
+		<if test="imei != '' and imei != null">
+			AND IMEI  = #{imei}
+		</if>
+		<if test="model != '' and model != null">
+			AND MODEL =  #{model}
+		</if>
+		<if test="appName != '' and appName != null">
+			AND APP_NAME =  #{appName}
+		</if>
+		<if test="appPackageName != '' and appPackageName != null">
+			AND APP_PACKAGE_INFO_NAME =  #{appPackageName}
+		</if>
+		<if test="installStatus != null and installStatus != ''">
+			AND INSTALL_STATUS = #{installStatus}
+		</if>
+		<if test="organizationId != null and organizationId !=''">
+			AND ORG_ID = #{organizationId}
+		</if>
+	</select>
+	
+<!-- jing.huang begin -->
+	<sql id="sql_where_time">
+		WHERE 1=1
+		<if test="org_id != '' and org_id != null">
+			AND ORG_ID IN
+		    	<foreach item="item" index="index" collection="org_id"   
+                     open="(" separator="," close=")">  
+                     #{item}  
+             	</foreach>
+		</if>
+		<if test="startTime != '' and startTime != null">
+			AND INSTALL_TIME &gt;= #{startTime}
+		</if>
+		<if test="endTime != '' and endTime != null">
+			AND INSTALL_TIME &lt; #{endTime}
+		</if>
+	</sql>
+	<sql id="sql_day">
+		SELECT DATE_FORMAT(INSTALL_TIME,'%Y-%m-%d') xAxis,COUNT(*) yData FROM
+		T_APP_INSTALL_LOG FORCE INDEX(IDX_INSTALL_TIME)
+		<include refid="sql_where_time"/>
+	</sql>
+	<sql id="sql_month">
+		SELECT DATE_FORMAT(INSTALL_TIME,'%Y-%m') xAxis,COUNT(*) yData FROM
+		T_APP_INSTALL_LOG FORCE INDEX(IDX_INSTALL_TIME)
+		<include refid="sql_where_time"/>
+	</sql>
+	<sql id="sql_season">
+		SELECT CONCAT(DATE_FORMAT(INSTALL_TIME,'%Y'),'年第',FLOOR((DATE_FORMAT(INSTALL_TIME, '%m ')+2)/3),'季度') xAxis,COUNT(*) yData FROM
+		T_APP_INSTALL_LOG FORCE INDEX(IDX_INSTALL_TIME)
+		<include refid="sql_where_time"/>
+	</sql>
+	<sql id="sql_year">
+		SELECT DATE_FORMAT(INSTALL_TIME,'%Y') xAxis,COUNT(*) yData FROM
+		T_APP_INSTALL_LOG FORCE INDEX(IDX_INSTALL_TIME)
+		<include refid="sql_where_time"/>
+	</sql>
+	
+	<!-- 按天 -->
+	<select id="dayInstallTotal" parameterType="map" resultType="ChartEntity">
+		<include refid="sql_day"/>
+		GROUP BY xAxis ORDER BY NULL
+	</select>
+	<select id="dayInstallImeiNull" parameterType="map" resultType="ChartEntity">
+		<include refid="sql_day"/>
+		AND IMEI = '-' OR IMEI = ''
+		GROUP BY xAxis ORDER BY NULL
+	</select>
+	<select id="dayInstallFail" parameterType="map" resultType="ChartEntity">
+		<include refid="sql_day"/>
+		AND INSTALL_STATUS = 0
+		GROUP BY xAxis ORDER BY NULL
+	</select>
+	
+	<!-- 按月 -->
+	<select id="monthInstallTotal" parameterType="map" resultType="ChartEntity">
+		<include refid="sql_month"/>
+		GROUP BY xAxis ORDER BY NULL
+	</select>
+	<select id="monthInstallImeiNull" parameterType="map" resultType="ChartEntity">
+		<include refid="sql_month"/>
+		AND IMEI = '-' OR IMEI = ''
+		GROUP BY xAxis ORDER BY NULL
+	</select>
+	<select id="monthInstallFail" parameterType="map" resultType="ChartEntity">
+		<include refid="sql_month"/>
+		AND INSTALL_STATUS = 0
+		GROUP BY xAxis ORDER BY NULL
+	</select>
+	
+	<!-- 按季 -->
+	<select id="seasonInstallTotal" parameterType="map" resultType="ChartEntity">
+		<include refid="sql_season"/>
+		GROUP BY xAxis ORDER BY NULL
+	</select>
+	<select id="seasonInstallImeiNull" parameterType="map" resultType="ChartEntity">
+		<include refid="sql_season"/>
+		AND IMEI = '-' OR IMEI = ''
+		GROUP BY xAxis ORDER BY NULL
+	</select>
+	<select id="seasonInstallFail" parameterType="map" resultType="ChartEntity">
+		<include refid="sql_season"/>
+		AND INSTALL_STATUS = 0
+		GROUP BY xAxis ORDER BY NULL
+	</select>
+	
+	<!-- 按年 -->
+	<select id="yearInstallTotal" parameterType="map" resultType="ChartEntity">
+		<include refid="sql_year"/>
+		GROUP BY xAxis ORDER BY NULL
+	</select>
+	<select id="yearInstallImeiNull" parameterType="map" resultType="ChartEntity">
+		<include refid="sql_year"/>
+		AND IMEI = '-' OR IMEI = ''
+		GROUP BY xAxis ORDER BY NULL
+	</select>
+	<select id="yearInstallFail" parameterType="map" resultType="ChartEntity">
+		<include refid="sql_year"/>
+		AND INSTALL_STATUS = 0
+		GROUP BY xAxis ORDER BY NULL
+	</select>
+<!-- jing.huang end -->
+</mapper>

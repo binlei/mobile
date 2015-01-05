@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jshuabo.mobile.server.dao.batchinstall.IAppPackageTypeMapper">
+	<resultMap id="appPackageTypeResultMap" type="AppPackageType">
+		<id column="ID" property="id" jdbcType="BIGINT" />
+		<result column="CODE" property="code" jdbcType="VARCHAR" />
+		<result column="NAME" property="name" jdbcType="VARCHAR" />
+		<result column="DESCRIPTION" property="description" jdbcType="VARCHAR" />
+		<result column="STATUS" property="status" jdbcType="VARCHAR" />
+
+		<result property="info.creatorId" column="CREATOR_ID" />
+		<result property="info.creator" column="CREATOR" />
+		<result property="info.createdTime" column="CREATED_TIME" />
+		<result property="info.lastOperatorId" column="LAST_OPERATOR_ID" />
+		<result property="info.lastOperator" column="LAST_OPERATOR" />
+		<result property="info.lastOperatedTime" column="LAST_OPERATED_TIME" />
+
+	</resultMap>
+	
+	<sql id="createTable">
+	<![CDATA[
+			CREATE TABLE `t_app_package_type` (
+				  `ID` bigint(20) NOT NULL PRIMARY KEY auto_increment,
+				  `CODE` varchar(190) UNIQUE default NULL,
+				  `NAME` varchar(255) default NULL,
+				  `DESCRIPTION` varchar(255) default NULL,
+				  `STATUS` varchar(20) default NULL,
+				  `CREATED_TIME` date default NULL,
+				  `CREATOR_ID` bigint(20) default NULL,
+				  `CREATOR` varchar(255) default NULL,
+				  `LAST_OPERATOR_ID` bigint(20) default NULL,
+				  `LAST_OPERATOR` varchar(255) default NULL,
+				  `LAST_OPERATED_TIME` date default NULL,
+				  PRIMARY KEY  (`ID`),
+				  UNIQUE KEY `CODE` (`CODE`)
+				) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+							
+	]]>
+	</sql>
+
+	<sql id="Base_Column_List">
+		ID, CODE, NAME, DESCRIPTION,STATUS,CREATED_TIME, CREATOR_ID,
+		CREATOR,
+		LAST_OPERATOR_ID, LAST_OPERATOR, LAST_OPERATED_TIME
+	</sql>
+	
+	<select id="page" parameterType="map" resultType="AppPackageType" resultMap="appPackageTypeResultMap">
+		SELECT
+		<include refid="Base_Column_List" />
+		FROM t_app_package_type
+		where 1=1
+		<if test="name != ''">
+			AND NAME LIKE CONCAT('%',#{name},'%' )
+		</if>
+		<if test="sortOrder != null">
+			ORDER BY ${sortOrder}
+		</if>
+		LIMIT #{offset}, #{rows}
+	</select>
+
+	<select id="total" parameterType="map" resultType="Long">
+		SELECT count(*) FROM t_app_package_type WHERE 1=1
+		<if test="name != ''">
+			AND NAME LIKE CONCAT('%',#{name},'%' )
+		</if> 
+	</select>
+	
+	<!-- 根据用户Id   读取该渠道包类型 -->
+	<select id="getAppPkgTypeByUserOrgId" parameterType="java.lang.Long"  resultType="map">
+		SELECT DISTINCT apt.id 'id', apt.`NAME` 'name' FROM t_app_package_info api,t_app_package_type apt WHERE api.APP_PACKAGE_TYPE_ID = apt.ID AND api.ORGANIZATION_ID = #{userOrgId}
+	</select>
+	
+	<select id="loadAll" resultMap="appPackageTypeResultMap">
+			SELECT <include refid="Base_Column_List"/> FROM t_app_package_type
+	</select>
+	
+	<select id="checkPackageType" resultType="int" parameterType="java.lang.Long">
+			SELECT COUNT(api.ID)  FROM t_app_package_info api ,t_app_package_type apt WHERE api.APP_PACKAGE_TYPE_ID = apt.ID AND apt.ID = #{appPackTypeId}
+	</select>
+
+	<select id="searchPackageTypeNameIsPass" resultType="String" parameterType="java.lang.Long">
+		select STATUS from t_app_package_type where id = #{packageTypeId}
+	</select>
+	
+	<select id="load" resultMap="appPackageTypeResultMap" parameterType="java.lang.Long">
+		select * from t_app_package_type where ID = #{id,jdbcType=BIGINT}
+	</select>
+
+	<delete id="delete" parameterType="java.lang.Long">
+		delete from t_app_package_type
+		where ID = #{id,jdbcType=BIGINT}
+	</delete>
+	
+	<delete id="deleteById" parameterType="java.lang.Long" flushCache="true"> 
+		delete from t_app_package_type where ID = #{id,jdbcType=BIGINT}
+	</delete>
+
+	<insert id="save" parameterType="Map">
+		insert into t_app_package_type ( CODE, NAME,
+		DESCRIPTION, STATUS,CREATED_TIME,
+		CREATOR_ID, CREATOR)
+		values ( #{code,jdbcType=VARCHAR},
+		#{name,jdbcType=VARCHAR},
+		#{description,jdbcType=VARCHAR},
+		#{status,jdbcType=VARCHAR}, #{createdTime} ,
+		#{creatorId,jdbcType=BIGINT}, #{creator,jdbcType=VARCHAR})
+	</insert>
+
+	<update id="update" parameterType="AppPackageType" >
+		update t_app_package_type
+		set CODE = #{code,jdbcType=VARCHAR},
+		NAME = #{name,jdbcType=VARCHAR},
+		DESCRIPTION = #{description,jdbcType=VARCHAR},
+		STATUS = #{status,jdbcType=VARCHAR}, 
+		LAST_OPERATOR_ID = #{lastOperatorId,jdbcType=BIGINT},
+		LAST_OPERATOR = #{lastOperator,jdbcType=VARCHAR},
+		LAST_OPERATED_TIME = #{lastOperatedTime,jdbcType=DATE}
+		where ID = #{id,jdbcType=BIGINT}
+	</update>
+</mapper>

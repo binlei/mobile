@@ -1,0 +1,84 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>com.jshuabo</groupId>
+		<artifactId>memory</artifactId>
+		<version>2.0</version>
+	</parent>
+
+
+	<version>1.4</version>
+	<artifactId>mobile</artifactId>
+	<packaging>war</packaging>
+	<name>mobile Maven Webapp</name>
+	<url>http://maven.apache.org</url>
+
+	<dependencies>
+		<dependency>
+			<groupId>com.jshuabo</groupId>
+			<artifactId>memory-webapp</artifactId>
+			<version>${project.parent.version}</version>
+		</dependency>
+
+		<!-- 加入jstl依赖包 -->
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>jstl</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>javax.servlet.jsp</groupId>
+			<artifactId>jsp-api</artifactId>
+			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>servlet-api</artifactId>
+		</dependency>
+
+		<!-- begin junit -->
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<!-- end junit -->
+	</dependencies>
+
+	<build>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-war-plugin</artifactId>
+					<version>2.4</version>
+					<configuration>
+						<warName>${project.artifactId}</warName>
+						<webResources>
+							<resource>
+								<filtering>true</filtering>
+								<directory>src/main/webapp</directory>
+								<includes>
+									<include>**/web.xml</include>
+								</includes>
+							</resource>
+						</webResources>
+						<warSourceDirectory>src/main/webapp</warSourceDirectory>
+						<webXml>src/main/webapp/WEB-INF/web.xml</webXml>
+					</configuration>
+				</plugin>
+				
+				<plugin>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<configuration>
+						<source>1.6</source>
+						<target>1.6</target>
+						<encoding>UTF-8</encoding>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+	</build>
+</project>

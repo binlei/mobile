@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jshuabo.mobile.server.dao.batchinstall.IAppPackageInfoDetailMapper" >
+ 
+  <resultMap id="appPackageInfoDetailResultMap" type="AppPackageInfoDetail" >
+     <id column="ID" property="id" jdbcType="BIGINT" />
+    <result column="LINE_NO" property="lineNo" jdbcType="INTEGER" />
+    <result column="DESCRIPTION" property="description" jdbcType="VARCHAR" />
+    
+    <result property="info.creatorId" column="CREATOR_ID" />
+	<result property="info.creator" column="CREATOR" />
+	<result property="info.createdTime" column="CREATED_TIME" />
+	<result property="info.lastOperatorId" column="LAST_OPERATOR_ID" />
+	<result property="info.lastOperator" column="LAST_OPERATOR" />
+	<result property="info.lastOperatedTime" column="LAST_OPERATED_TIME" />
+    
+    <association property="appInfo" column="APP_INFO_ID" jdbcType="BIGINT" select="com.jshuabo.mobile.server.dao.batchinstall.IAppInfoMapper.load" ></association>
+    <association property="appPackageInfo" column="APP_PACKAGE_INFO_ID" jdbcType="BIGINT" select="com.jshuabo.mobile.server.dao.batchinstall.IAppPackageInfoMapper.load"></association>
+  </resultMap>
+  
+  <resultMap id="detailResultMap" type="AppPackageInfoDetail" >
+    <id column="ID" property="id" jdbcType="BIGINT" />
+    <result column="LINE_NO" property="lineNo" jdbcType="INTEGER" />
+    <result column="DESCRIPTION" property="description" jdbcType="VARCHAR" />
+    
+    <result property="info.creatorId" column="CREATOR_ID" />
+	<result property="info.creator" column="CREATOR" />
+	<result property="info.createdTime" column="CREATED_TIME" />
+	<result property="info.lastOperatorId" column="LAST_OPERATOR_ID" />
+	<result property="info.lastOperator" column="LAST_OPERATOR" />
+	<result property="info.lastOperatedTime" column="LAST_OPERATED_TIME" />
+    
+    <association property="appInfo" column="APP_INFO_ID" jdbcType="BIGINT" select="com.jshuabo.mobile.server.dao.batchinstall.IAppInfoMapper.load" ></association>
+  </resultMap>
+  
+  <sql id="createTable">
+	<![CDATA[
+			CREATE TABLE `t_app_package_info_detail` (
+				  `ID` bigint(20) NOT NULL PRIMARY KEY auto_increment,
+				  `APP_PACKAGE_INFO_ID` bigint(20) default NULL,
+				  `LINE_NO` int(11) default NULL,
+				  `APP_INFO_ID` bigint(20) default NULL,
+				  `DESCRIPTION` varchar(255) default NULL,
+				  `CREATED_TIME` date default NULL,
+				  `CREATOR_ID` bigint(20) default NULL,
+				  `CREATOR` varchar(255) default NULL,
+				  `LAST_OPERATOR_ID` bigint(20) default NULL,
+				  `LAST_OPERATOR` varchar(255) default NULL,
+				  `LAST_OPERATED_TIME` date default NULL,
+				  PRIMARY KEY  (`ID`),
+				  KEY `FK_APP_PKG_DETAIL_APP_INFO` (`APP_INFO_ID`),
+				  KEY `FK_APP_PKG_DETAIL_APP_PKG` (`APP_PACKAGE_INFO_ID`),
+				  CONSTRAINT `FK_APP_PKG_DETAIL_APP_INFO` FOREIGN KEY (`APP_INFO_ID`) REFERENCES `t_app_info` (`ID`),
+				  CONSTRAINT `FK_APP_PKG_DETAIL_APP_PKG` FOREIGN KEY (`APP_PACKAGE_INFO_ID`) REFERENCES `t_app_info` (`ID`)
+				) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+	
+	]]>
+	</sql>
+
+  <sql id="Base_Column_List" >
+    ID, APP_PACKAGE_INFO_ID, LINE_NO, APP_INFO_ID, DESCRIPTION, CREATED_TIME, CREATOR_ID, 
+    CREATOR, LAST_OPERATOR_ID, LAST_OPERATOR, LAST_OPERATED_TIME
+  </sql>
+  
+  <select id="queryAppIsInPackageByAppId" resultType="String" parameterType="Long">
+  	SELECT api.`NAME`
+		FROM
+			t_app_package_info_detail detail,
+			t_app_package_info api
+		WHERE
+			api.ID = detail.APP_PACKAGE_INFO_ID
+		AND detail.APP_INFO_ID = #{appInfoId} LIMIT 1;
+  </select>
+  
+  <select id="queryPackageByApkId" parameterType="Long" resultMap="com.jshuabo.mobile.server.dao.batchinstall.IAppPackageInfoMapper.appPackageInfoResultMap">
+  		SELECT api.* FROM t_app_info ai,t_app_package_info api,t_app_package_info_detail pid WHERE ai.ID = pid.APP_INFO_ID AND api.ID = pid.APP_PACKAGE_INFO_ID AND ai.ID = #{apkId}
+  </select>
+  
+  <!-- 查询包中的apk 列表 -->
+  <select id="queryByPackageId" parameterType="Map" resultMap="com.jshuabo.mobile.server.dao.batchinstall.IAppInfoMapper.appInfoResultMap">
+  			SELECT
+					c.ID,c.`NAME`,a.ID 'DID',
+					CONCAT(#{imageFilePath},c.ICO_PATH) 'ICO_PATH',
+					c.FILE_SIZE,c.`STATUS`,c.FILE_PATH,c.FILE_NAME
+				FROM
+					t_app_package_info_detail a,
+					t_app_package_info b,
+					t_app_info c
+				WHERE
+					a.APP_INFO_ID = c.ID 
+				AND a.APP_PACKAGE_INFO_ID = b.ID 
+				<if test="appPkgInfoId != '' and appPkgInfoId != null">
+					AND b.ID = #{appPkgInfoId}
+				</if>
+				<if test="sortOrder != null">
+					ORDER BY ${sortOrder}
+				</if>
+				LIMIT #{offset}, #{rows}
+  </select>
+  
+    <!-- 查询包中的apk -->
+  <select id="queryAppInfoByPgkId" parameterType="java.lang.Long" resultType="Map">
+  			SELECT
+				c.ID 'id',c.`NAME`'name',c.FILE_SIZE 'size',c.FILE_PATH 'path',c.ICO_PATH 'ico',
+				c.APP_VERSION 'version',c.MD5 'md5',c.SHOW_SHOR_CUT 'shortcut',c.FILE_PACKAGE_NAME 'filePackageName'
+							FROM
+					t_app_package_info_detail a,
+					t_app_package_info b,
+					t_app_info c
+				WHERE
+					a.APP_INFO_ID = c.ID 
+				AND a.APP_PACKAGE_INFO_ID = b.ID AND a.APP_PACKAGE_INFO_ID =  #{packageId}
+  </select>
+  
+    <!-- 查询包中的apk -->
+  <select id="totalAppInfoByPkgId" parameterType="Long" resultType="int"> 
+  			SELECT count(c.ID)
+				FROM
+					t_app_package_info_detail a,
+					t_app_package_info b,
+					t_app_info c
+				WHERE
+					a.APP_INFO_ID = c.ID 
+				AND a.APP_PACKAGE_INFO_ID = b.ID 
+				AND b.ID = #{appPkgInfoId}
+  </select>
+  
+  <!-- 验证是否有相同的APk -->
+  <select id="checkAppInfoRepetition" parameterType="java.lang.Long" resultType="String">
+  		SELECT ai.`STATUS`  FROM t_app_package_info_detail pid,t_app_info ai WHERE pid.APP_INFO_ID = ai.ID AND pid.APP_INFO_ID  = #{appInfoId} AND  pid.APP_PACKAGE_INFO_ID = #{appPackageId} 
+  </select>
+  
+  <!-- 查询安装包明细 -->
+  <select id="queryDetail" parameterType="java.lang.Long" resultMap="detailResultMap">
+  		SELECT * FROM t_app_package_info_detail apid WHERE apid.APP_PACKAGE_INFO_ID = #{appPackageId}
+  </select>
+  
+  <select id="loadByPkgIdAndApkId" resultMap="appPackageInfoDetailResultMap" parameterType="java.lang.Long" >
+    select 
+    <include refid="Base_Column_List" />
+    from t_app_package_info_detail where APP_PACKAGE_INFO_ID = #{apkPkgId} AND APP_INFO_ID = #{apkId}
+  </select>
+  
+  <select id="load" resultMap="appPackageInfoDetailResultMap" parameterType="java.lang.Long" >
+    select 
+    <include refid="Base_Column_List" />
+    from t_app_package_info_detail
+    where ID = #{id,jdbcType=BIGINT}
+  </select>
+  
+  <delete id="delete" parameterType="AppPackageInfoDetail"  flushCache="true">
+    delete from t_app_package_info_detail where ID = #{id}
+  </delete>
+  
+  <delete id="deleteByAppIdPackageId" parameterType="AppPackageInfoDetail">
+  	DELETE FROM t_app_package_info_detail WHERE APP_PACKAGE_INFO_ID = #{appPackageInfo.id} AND APP_INFO_ID = #{appInfo.id};
+  </delete>
+  
+  <insert id="save" parameterType="AppPackageInfoDetail" >
+     insert into t_app_package_info_detail (APP_PACKAGE_INFO_ID, LINE_NO, 
+      APP_INFO_ID, DESCRIPTION, CREATED_TIME, 
+      CREATOR_ID, CREATOR)
+    values (#{appPackageInfo.id,jdbcType=BIGINT}, #{lineNo,jdbcType=INTEGER}, 
+      #{appInfo.id,jdbcType=BIGINT}, #{description,jdbcType=VARCHAR}, #{createdTime,jdbcType=DATE}, 
+      #{creatorId,jdbcType=BIGINT}, #{creator,jdbcType=VARCHAR})
+  </insert>
+  
+  <update id="update" parameterType="AppPackageInfoDetail" >
+    update t_app_package_info_detail
+	    set APP_PACKAGE_INFO_ID = #{appPackageInfoId,jdbcType=BIGINT},
+		      LINE_NO = #{lineNo,jdbcType=INTEGER},
+		      APP_INFO_ID = #{appInfoId,jdbcType=BIGINT},
+		      DESCRIPTION = #{description,jdbcType=VARCHAR},
+		      CREATED_TIME = #{createdTime,jdbcType=DATE},
+		      CREATOR_ID = #{creatorId,jdbcType=BIGINT},
+		      CREATOR = #{creator,jdbcType=VARCHAR},
+		      LAST_OPERATOR_ID = #{lastOperatorId,jdbcType=BIGINT},
+		      LAST_OPERATOR = #{lastOperator,jdbcType=VARCHAR},
+		      LAST_OPERATED_TIME = #{lastOperatedTime,jdbcType=DATE}
+	    where ID = #{id,jdbcType=BIGINT}
+  </update>
+</mapper>

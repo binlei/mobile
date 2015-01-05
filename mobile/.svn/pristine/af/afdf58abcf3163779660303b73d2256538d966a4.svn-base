@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.jshuabo.mobile.server.dao.mobile.IMobilePushMessageMapper">
+	<resultMap type="MobilePushMessage" id="mobilePushMessageResultMap">
+		<id property="id" column="ID" />
+		<result property="dealType" column="DEAL_TYPE" />
+		<result property="notiTitle" column="NOTI_TITLE" />
+		<result property="notiContent" column="NOTI_CONTENT" />
+		<result property="notiImgUrl" column="NOTI_IMG_URL" />
+		<result property="openType" column="OPEN_TYPE" />
+		<result property="netUrl" column="NET_URL" />
+		<result property="notiFileUrl" column="NOTI_FILE_URL" />		
+		<result property="packageName" column="PACKAGE_NAME" />
+		<result property="extendsData1" column="EXTENDS_DATA1" />
+		<result property="extendsData2" column="EXTENDS_DATA2" />
+		<result property="extendProp1" column="EXTEND_PROP1" />
+		<result property="extendProp2" column="EXTEND_PROP2" />
+
+		<result property="info.creatorId" column="CREATOR_ID" />
+		<result property="info.creator" column="CREATOR" />
+		<result property="info.createdTime" column="CREATED_TIME" />
+		<result property="info.lastOperatorId" column="LAST_OPERATOR_ID" />
+		<result property="info.lastOperator" column="LAST_OPERATOR" />
+		<result property="info.lastOperatedTime" column="LAST_OPERATED_TIME" />
+	</resultMap>
+
+	<sql id="createTable">
+	<![CDATA[
+		CREATE TABLE T_MOBILE_PUSH_MESSAGE
+		(
+			ID BIGINT(20) NOT NULL PRIMARY KEY AUTO_INCREMENT,
+			DEAL_TYPE VARCHAR(10),
+	 		NOTI_TITLE VARCHAR(255),
+	 		NOTI_CONTENT VARCHAR(500),
+	 		NOTI_IMG_URL VARCHAR(255),
+	 		OPEN_TYPE VARCHAR(10),
+	 		NET_URL VARCHAR(400),
+	 		NOTI_FILE_URL VARCHAR(500),
+	 		PACKAGE_NAME VARCHAR(500),	
+	 		EXTENDS_DATA1 VARCHAR(500),
+	 		EXTENDS_DATA2 VARCHAR(500),
+	 		EXTEND_PROP1 VARCHAR(255),
+			EXTEND_PROP2 VARCHAR(255),
+			CREATOR_ID BIGINT(20),
+	 		CREATOR VARCHAR(255),
+			CREATED_TIME DATETIME,
+			LAST_OPERATOR_ID BIGINT(20),
+	 		LAST_OPERATOR VARCHAR(255),
+			LAST_OPERATED_TIME DATETIME
+		)ENGINE=INNODB  DEFAULT CHARSET=UTF8 DEFAULT COLLATE=UTF8_BIN;
+	]]>
+	</sql>
+
+	<sql id="sql_select">
+		SELECT ID,DEAL_TYPE,NOTI_TITLE,NOTI_CONTENT,NOTI_IMG_URL,OPEN_TYPE,NET_URL,NOTI_FILE_URL,PACKAGE_NAME,EXTENDS_DATA1,EXTENDS_DATA2,EXTEND_PROP1,EXTEND_PROP2,CREATOR,CREATED_TIME,LAST_OPERATOR,LAST_OPERATED_TIME FROM T_MOBILE_PUSH_MESSAGE
+	</sql>
+	
+	<sql id="sql_where">
+		WHERE 1=1
+        	<if test="q != '' and q != null">
+		    	AND ID LIKE CONCAT('%',#{q},'%' )
+		  	</if>
+        	<if test="notiTitle != '' and notiTitle != null">
+		    	AND NOTI_TITLE = #{notiTitle}
+		  	</if>
+		  	<if test="extendProp2 != '' and extendProp2 != null">
+		    	AND EXTEND_PROP2 = #{extendProp2}
+		  	</if>
+		  	<if test="dealType != '' and dealType != null">
+		    	AND DEAL_TYPE = #{dealType}
+		  	</if>
+	</sql>
+	
+	<select id="page" parameterType="map" resultType="MobilePushMessage" resultMap="mobilePushMessageResultMap">
+        <include refid="sql_select"/>
+        <include refid="sql_where"/>
+	  	<choose>
+	  		<when test="sortOrder != null">
+	  			ORDER BY ${sortOrder}
+	  		</when>
+	  		<otherwise>
+	  			ORDER BY CREATED_TIME DESC
+	  		</otherwise>
+	  	</choose>
+        LIMIT #{offset}, #{rows}
+	</select>
+	
+	<select id="total" parameterType="map" resultType="Long" >
+            SELECT count(*) FROM T_MOBILE_PUSH_MESSAGE
+            <include refid="sql_where"/>		
+	</select>
+	
+	<select id="exportAll" parameterType="map" resultType="MobilePushMessage" resultMap="mobilePushMessageResultMap">
+            <include refid="sql_select"/>
+            <include refid="sql_where"/>
+		  	LIMIT 0,100000
+	</select>
+	
+	<select id="exportSelections" resultType="MobilePushMessage" resultMap="mobilePushMessageResultMap">
+            <include refid="sql_select"/>
+            WHERE ID IN
+            <foreach item="item" index="index" collection="list"   
+                     open="(" separator="," close=")">  
+                     #{item}  
+             </foreach> 
+	</select>
+	
+	<select id="load" parameterType="Long" resultType="MobilePushMessage"
+		resultMap="mobilePushMessageResultMap">
+        <![CDATA[
+            SELECT * FROM T_MOBILE_PUSH_MESSAGE WHERE ID = #{id} 
+        ]]>
+	</select>
+
+	<select id="queryMessageByImei"  resultType="Map">
+        <![CDATA[
+            SELECT
+				b.ID AS id, a.DEAL_TYPE as dealType, a.NOTI_TITLE as notiTitle, a.NOTI_CONTENT as notiContent, 
+				a.NOTI_IMG_URL as notiImgUrl, a.OPEN_TYPE as openType, a.NET_URL as netUrl, a.NOTI_FILE_URL as notiFileUrl,
+				a.PACKAGE_NAME as packageName, a.EXTENDS_DATA1 as extendsData1, a.EXTENDS_DATA2 as extendsData2
+            FROM T_MOBILE_PUSH_MESSAGE a, T_MOBILE_PUSH_MESSAGE_IMEI b
+            WHERE a.ID = b.PUSH_MESSAGE_ID 
+            	AND b.STATUS = #{status}
+            	AND b.IMEI = #{imei}
+             	ORDER BY b.ID
+            LIMIT 1 
+        ]]>
+	</select>
+
+	<select id="loadAll" resultType="MobilePushMessage" resultMap="mobilePushMessageResultMap">
+        <![CDATA[
+            SELECT * FROM T_MOBILE_PUSH_MESSAGE
+        ]]>
+	</select>
+
+	<insert id="save" parameterType="MobilePushMessage" useGeneratedKeys="true"
+		keyProperty="id">
+		INSERT INTO T_MOBILE_PUSH_MESSAGE (
+			ID,DEAL_TYPE,NOTI_TITLE,NOTI_CONTENT,NOTI_IMG_URL,OPEN_TYPE,NET_URL,NOTI_FILE_URL,
+			PACKAGE_NAME,EXTENDS_DATA1,EXTENDS_DATA2,EXTEND_PROP1,EXTEND_PROP2,
+			CREATOR_ID,CREATOR,CREATED_TIME
+		) VALUES (
+			#{id},#{dealType},#{notiTitle},#{notiContent},#{notiImgUrl},#{openType},#{netUrl},#{notiFileUrl},
+			#{packageName},#{extendsData1},#{extendsData2},#{extendProp1},#{extendProp2},
+			#{creatorId},#{creator},#{createdTime}
+		)
+	</insert>
+
+	<update id="update" parameterType="MobilePushMessage">
+		UPDATE T_MOBILE_PUSH_MESSAGE
+		SET 
+			DEAL_TYPE = #{dealType},
+			NOTI_TITLE = #{notiTitle}, 
+			NOTI_CONTENT = #{notiContent}, 
+			NOTI_IMG_URL = #{notiImgUrl},
+			OPEN_TYPE = #{openType},
+			NET_URL = #{netUrl},
+			NOTI_FILE_URL = #{notiFileUrl},
+			PACKAGE_NAME = #{packageName},
+			EXTENDS_DATA1 = #{extendsData1},
+			EXTENDS_DATA2 = #{extendsData2},
+			EXTEND_PROP1 = #{extendProp1},
+			EXTEND_PROP2 = #{extendProp2},
+			LAST_OPERATOR_ID = #{lastOperatorId},
+			LAST_OPERATOR = #{lastOperator},
+			LAST_OPERATED_TIME = #{lastOperatedTime}
+		WHERE ID = #{id}
+	</update>
+
+	<delete id="delete" parameterType="MobilePushMessage">
+		<![CDATA[
+			DELETE FROM T_MOBILE_PUSH_MESSAGE WHERE ID = #{id}
+		]]>
+	</delete>
+
+	<delete id="deleteById" parameterType="Long">
+		<![CDATA[
+			DELETE FROM T_MOBILE_PUSH_MESSAGE WHERE ID = #{id}
+		]]>
+	</delete>
+</mapper>

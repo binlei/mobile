@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.jshuabo.mobile.server.dao.mobile.IMobilePushMessageImeiMapper">
+	<resultMap type="MobilePushMessageImei" id="mobilePushMessageImeiResultMap">
+		<id property="id" column="ID" />
+		<result property="pushMessageId" column="PUSH_MESSAGE_ID" />
+		<result property="imei" column="IMEI" />
+		<result property="pushTime" column="PUSH_TIME" />
+		<result property="mobileLocationId" column="MOBILE_LOCATION_ID" />
+		<result property="pushedCount" column="PUSHED_COUNT" />
+		<result property="status" column="STATUS" />
+		<result property="extendProp1" column="EXTEND_PROP1" />
+		<result property="extendProp2" column="EXTEND_PROP2" />
+
+		<result property="info.creatorId" column="CREATOR_ID" />
+		<result property="info.creator" column="CREATOR" />
+		<result property="info.createdTime" column="CREATED_TIME" />
+		<result property="info.lastOperatorId" column="LAST_OPERATOR_ID" />
+		<result property="info.lastOperator" column="LAST_OPERATOR" />
+		<result property="info.lastOperatedTime" column="LAST_OPERATED_TIME" />
+	</resultMap>
+
+	<sql id="createTable">
+	<![CDATA[
+		CREATE TABLE T_MOBILE_PUSH_MESSAGE_IMEI
+		(
+			ID BIGINT(20) NOT NULL PRIMARY KEY AUTO_INCREMENT,
+	 		PUSH_MESSAGE_ID BIGINT(20),
+	 		IMEI VARCHAR(255),
+	 		MOBILE_LOCATION_ID BIGINT(20),
+	 		PUSH_TIME DATETIME,
+	 		PUSHED_COUNT INT(11) DEFAULT 0,
+	 		STATUS VARCHAR(255) DEFAULT 'READY',
+	 		EXTEND_PROP1 VARCHAR(255),
+			EXTEND_PROP2 VARCHAR(255),
+			CREATOR_ID BIGINT(20),
+	 		CREATOR VARCHAR(255),
+			CREATED_TIME DATETIME,
+			LAST_OPERATOR_ID BIGINT(20),
+	 		LAST_OPERATOR VARCHAR(255),
+			LAST_OPERATED_TIME DATETIME,
+			INDEX IDX_TMESSIMEI_IMEI(IMEI),
+			INDEX IDX_TMESSIMEI_STUS(STATUS)			
+		)ENGINE=INNODB  DEFAULT CHARSET=UTF8 DEFAULT COLLATE=UTF8_BIN;
+	]]>
+	</sql>
+
+	<sql id="sql_select">
+		SELECT ID,PUSH_MESSAGE_ID,IMEI,MOBILE_LOCATION_ID,PUSH_TIME,PUSHED_COUNT,STATUS,EXTEND_PROP1,EXTEND_PROP2 FROM T_MOBILE_PUSH_MESSAGE_IMEI
+	</sql>
+	
+	<sql id="sql_where">
+		WHERE 1=1
+		  	<if test="pushMessageId != '' and pushMessageId != null">
+		    	AND PUSH_MESSAGE_ID = #{pushMessageId}
+		  	</if>
+        	<if test="imei != '' and imei != null">
+		    	AND IMEI = #{imei}
+		  	</if>
+		  	<if test="mobileLocationId != '' and mobileLocationId != null">
+		    	AND MOBILE_LOCATION_ID = #{mobileLocationId}
+		  	</if>
+		  	
+		  	<if test="pushTime_from != '' and pushTime_from != null">
+		    	AND PUSH_TIME &gt;= CONCAT(#{pushTime_from},' 00:00:00' )
+		  	</if>
+		  	<if test="pushTime_to != '' and pushTime_to != null">
+		    	AND PUSH_TIME &lt;= CONCAT(#{pushTime_to},' 23:59:59' )
+		  	</if>
+		  	<if test="status != '' and status != null">
+		    	AND STATUS = #{status}
+		  	</if>
+		  	<if test="extendProp2 != '' and extendProp2 != null">
+		    	AND EXTEND_PROP2 = #{extendProp2}
+		  	</if>
+	</sql>
+	
+	<select id="page" parameterType="map" resultType="MobilePushMessageImei" resultMap="mobilePushMessageImeiResultMap">
+        <include refid="sql_select"/>
+        <include refid="sql_where"/>
+        <choose>
+			<when test="sortOrder != null">
+				ORDER BY ${sortOrder}
+			</when>
+			<otherwise>
+				ORDER BY CREATED_TIME DESC
+			</otherwise>
+		</choose>
+        LIMIT #{offset}, #{rows}
+	</select>
+	
+	<select id="total" parameterType="map" resultType="Long" >
+        SELECT count(*) FROM T_MOBILE_PUSH_MESSAGE_IMEI
+        <include refid="sql_where"/>				  	
+	</select>
+	
+	<select id="exportAll" parameterType="map" resultType="MobilePushMessageImei" resultMap="mobilePushMessageImeiResultMap">
+        <include refid="sql_select"/>
+        <include refid="sql_where"/>
+		LIMIT 0,100000
+	</select>
+	
+	<select id="exportSelections" resultType="MobilePushMessageImei" resultMap="mobilePushMessageImeiResultMap">
+            <include refid="sql_select"/>
+            WHERE ID IN
+            <foreach item="item" index="index" collection="list"   
+                     open="(" separator="," close=")">  
+                     #{item}  
+             </foreach> 
+	</select>
+	
+	<select id="queryByImei" parameterType="String" resultType="MobilePushMessageImei"
+		resultMap="mobilePushMessageImeiResultMap">
+        <![CDATA[
+            SELECT * FROM T_MOBILE_PUSH_MESSAGE_IMEI WHERE IMEI = #{imei} OEDER BY PUSH_TIME DESC
+        ]]>
+	</select>
+	
+	<select id="load" parameterType="Long" resultType="MobilePushMessageImei"
+		resultMap="mobilePushMessageImeiResultMap">
+        <![CDATA[
+            SELECT * FROM T_MOBILE_PUSH_MESSAGE_IMEI WHERE ID = #{id} 
+        ]]>
+	</select>
+
+	<select id="loadAll" resultType="MobilePushMessageImei" resultMap="mobilePushMessageImeiResultMap">
+        <![CDATA[
+            SELECT * FROM T_MOBILE_PUSH_MESSAGE_IMEI
+        ]]>
+	</select>
+
+	<insert id="save" parameterType="MobilePushMessageImei" useGeneratedKeys="true"
+		keyProperty="id">
+		INSERT INTO T_MOBILE_PUSH_MESSAGE_IMEI (
+			ID,PUSH_MESSAGE_ID,IMEI,MOBILE_LOCATION_ID,PUSH_TIME,PUSHED_COUNT,STATUS,EXTEND_PROP1,EXTEND_PROP2,
+			CREATOR_ID,CREATOR,CREATED_TIME
+		) VALUES (
+			#{id},#{pushMessageId},#{imei},#{mobileLocationId},#{pushTime},#{pushedCount},#{status},#{extendProp1},#{extendProp2},
+			#{creatorId},#{creator},#{createdTime}
+		)
+	</insert>
+
+	<update id="update" parameterType="MobilePushMessageImei">
+		UPDATE T_MOBILE_PUSH_MESSAGE_IMEI
+		SET 
+			PUSH_MESSAGE_ID = #{pushMessageId},
+			IMEI = #{imei},
+			MOBILE_LOCATION_ID = #{mobileLocationId},
+			PUSH_TIME = #{pushTime},
+			PUSHED_COUNT = #{pushedCount},
+			STATUS = #{status},
+			EXTEND_PROP1 = #{extendProp1},
+			EXTEND_PROP2 = #{extendProp2},
+			LAST_OPERATOR_ID = #{lastOperatorId},
+			LAST_OPERATOR = #{lastOperator},
+			LAST_OPERATED_TIME = #{lastOperatedTime}
+		WHERE ID = #{id}
+	</update>
+
+	<update id="updatePushedMsgStatus">
+		UPDATE T_MOBILE_PUSH_MESSAGE_IMEI
+		SET 
+			STATUS = #{status},
+			PUSH_TIME = #{pushTime},
+			MOBILE_LOCATION_ID = #{locationId},
+			EXTEND_PROP2 = #{version},
+			PUSHED_COUNT = PUSHED_COUNT + 1,
+			LAST_OPERATOR_ID = #{lastOperatorId},
+			LAST_OPERATOR = #{lastOperator},
+			LAST_OPERATED_TIME = #{lastOperatedTime}
+		WHERE ID = #{id}
+	</update>
+
+	<delete id="delete" parameterType="MobilePushMessageImei">
+		<![CDATA[
+			DELETE FROM T_MOBILE_PUSH_MESSAGE_IMEI WHERE ID = #{id}
+		]]>
+	</delete>
+
+	<delete id="deleteById" parameterType="Long">
+		<![CDATA[
+			DELETE FROM T_MOBILE_PUSH_MESSAGE_IMEI WHERE ID = #{id}
+		]]>
+	</delete>
+	
+</mapper>

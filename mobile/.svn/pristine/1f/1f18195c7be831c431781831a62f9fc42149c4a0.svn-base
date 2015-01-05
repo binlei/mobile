@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+                     http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+                     http://www.springframework.org/schema/context
+                     http://www.springframework.org/schema/context/spring-context-3.1.xsd">
+
+	<bean class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+		<property name="triggers">
+			<list>
+				<ref bean="processUpdateChannelCronTrigger" />
+				<ref bean="processMobileDataCronTrigger" />
+				<ref bean="processAppUsageCronTrigger" />
+				<ref bean="processDeleteOldRecordTrigger" />
+			</list>
+		</property>
+	</bean>
+
+
+	<!-- begin mobile采集数据整理 -->
+	<bean id="processMobileDataQuartz" class="com.jshuabo.mobile.server.quartz.mobile.MobileDataProcessQuartz" />
+
+	<bean id="processMobileDataJobDetail" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="processMobileDataQuartz" />
+		<property name="targetMethod" value="process" />
+	</bean>
+
+	<bean id="processMobileDataCronTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="processMobileDataJobDetail" />
+		<property name="cronExpression" value="0 0 1 * * ?" />
+	</bean>
+	<!-- end mobile采集数据整理 -->
+	
+	<!-- begin AppUsage -->
+	<bean id="processAppUsageJobDetail" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="processMobileDataQuartz" />
+		<property name="targetMethod" value="processAppUsage" />
+	</bean>
+
+	<bean id="processAppUsageCronTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="processAppUsageJobDetail" />
+		<property name="cronExpression" value="0 0 3 * * ?" />
+	</bean>
+	<!-- end AppUsage -->
+
+	<!-- begin processDeleteOldRecord -->
+	<bean id="processDeleteOldRecordJobDetail" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="processMobileDataQuartz" />
+		<property name="targetMethod" value="processDeleteOldRecord" />
+	</bean>
+
+	<bean id="processDeleteOldRecordTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="processDeleteOldRecordJobDetail" />
+		<property name="cronExpression" value="0 0 5 * * ?" />
+	</bean>
+	<!-- end AppUsage -->
+
+	<!-- begin update更新渠道 -->
+	<bean id="processUpdateChannelJobDetail" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="processMobileDataQuartz" />
+		<property name="targetMethod" value="updateChannel" />
+	</bean>
+	
+	<bean id="processUpdateChannelCronTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="processUpdateChannelJobDetail" />
+		<property name="cronExpression" value="0 0 6 * * ?" />
+	</bean>
+	<!-- end update更新渠道 -->
+	
+	<!-- <bean id="job"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="bean" />
+		<property name="targetMethod" value="method" />
+	</bean>
+	<bean id="simpleTrigger"
+		class="org.springframework.scheduling.quartz.SimpleTriggerFactoryBean">
+		<property name="jobDetail" ref="job" />
+		<property name="startDelay" value="0" />
+		<property name="repeatInterval" value="60000" />
+		<property name="repeatCount" value="0" />
+	</bean> -->
+	
+</beans>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+                     http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+                     http://www.springframework.org/schema/context
+                     http://www.springframework.org/schema/context/spring-context-3.1.xsd
+                     http://www.springframework.org/schema/mvc
+                     http://www.springframework.org/schema/mvc/spring-mvc-3.1.xsd">
+
+	<import resource="classpath:quartzJob.xml"/>
+	
+	<bean class="com.jshuabo.mobile.server.web.controller.batchinstall.AppInfoController">
+		<property name="fileStoragePath">
+			<value>${fileStoragePath}</value>
+		</property>
+		<property name="aaptPath">
+			<value>${aaptPath}</value>
+		</property>
+	</bean>
+	
+	<bean class="com.jshuabo.mobile.server.service.batchinstall.impl.DefaultAppInfoServiceImpl">
+		<property name="imageFilePath">
+			<value>${imageFilePath}</value>
+		</property>
+		<property name="packageInfoPath">
+			<value>${packageInfoPath}</value>
+		</property>
+	</bean>
+	
+ 	<beans profile="development">
+        <context:property-placeholder location="classpath:configPath_development.properties" ignore-unresolvable="true" />  
+    </beans>
+    <beans profile="test">
+        <context:property-placeholder location="classpath:configPath_test.properties" ignore-unresolvable="true" />  
+    </beans>
+    <beans profile="production">
+        <context:property-placeholder location="classpath:configPath_production.properties" ignore-unresolvable="true" />  
+    </beans>
+</beans>

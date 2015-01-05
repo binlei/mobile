@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.jshuabo.mobile.server.dao.mobile.IMobileLocationMapper">
+	<resultMap type="MobileLocation" id="mobileLocationResultMap">
+		<id property="id" column="ID" />
+		<result property="imei" column="IMEI" />
+		<result property="longitude" column="LONGITUDE" />
+		<result property="latitude" column="LATITUDE" />
+		<result property="locationTime" column="LOCATION_TIME" />
+		<result property="address" column="ADDRESS" />
+		<result property="uploadTime" column="UPLOAD_TIME" />
+		<result property="extendProp1" column="EXTEND_PROP1" />
+		<result property="extendProp2" column="EXTEND_PROP2" />
+		<result property="extendProp3" column="EXTEND_PROP3" />
+		<result property="extendProp4" column="EXTEND_PROP4" />
+		<result property="extendProp5" column="EXTEND_PROP5" />
+
+		<result property="info.creatorId" column="CREATOR_ID" />
+		<result property="info.creator" column="CREATOR" />
+		<result property="info.createdTime" column="CREATED_TIME" />
+		<result property="info.lastOperatorId" column="LAST_OPERATOR_ID" />
+		<result property="info.lastOperator" column="LAST_OPERATOR" />
+		<result property="info.lastOperatedTime" column="LAST_OPERATED_TIME" />
+	</resultMap>
+
+	<sql id="sql_select">
+		SELECT ID,IMEI,LONGITUDE,LATITUDE,LOCATION_TIME,ADDRESS,UPLOAD_TIME,EXTEND_PROP1,EXTEND_PROP2,EXTEND_PROP5 FROM T_MOBILE_LOCATION_PROCESSED 
+	</sql>
+	
+	<sql id="sql_where">
+		WHERE 1=1
+        	<if test="imei != '' and imei !=null">
+		    	AND IMEI = #{imei}
+		  	</if>
+			<if test="extendProp4 != '' and extendProp4 !=null">
+		    	AND EXTEND_PROP4 IN
+		    	<foreach item="item" index="index" collection="extendProp4"   
+	                   open="(" separator="," close=")">  
+	                   #{item}  
+	           	</foreach>
+		  	</if>
+		  	<if test="address != '' and address !=null">
+		    	AND ADDRESS LIKE CONCAT('%',#{address},'%')
+		  	</if>
+		  	<if test="extendProp2 != '' and extendProp2 !=null">
+		    	AND EXTEND_PROP2 = #{extendProp2}
+		  	</if>
+		  	
+		  	<if test="locationTime_from != '' and locationTime_from !=null">
+		    	AND LOCATION_TIME &gt;= CONCAT(#{locationTime_from},' 00:00:00' )
+		  	</if>
+		  	<if test="locationTime_to != '' and locationTime_to !=null">
+		    	AND LOCATION_TIME &lt;= CONCAT(#{locationTime_to},' 23:59:59' )
+		  	</if>
+		  	<if test="uploadTime_from != '' and uploadTime_from !=null">
+		    	AND UPLOAD_TIME &gt;= CONCAT(#{uploadTime_from},' 00:00:00' )
+		  	</if>
+		  	<if test="uploadTime_to != '' and uploadTime_to !=null">
+		    	AND UPLOAD_TIME &lt;= CONCAT(#{uploadTime_to},' 23:59:59' )
+		  	</if>
+	</sql>
+	<select id="page" parameterType="map" resultType="MobileLocation" resultMap="mobileLocationResultMap">
+        <include refid="sql_select"/>
+		<include refid="sql_where"/> 	
+        <if test="sortOrder != null">
+	  		ORDER BY ${sortOrder}
+		</if>
+        LIMIT #{offset}, #{rows}
+	</select>
+	
+	<select id="total" parameterType="map" resultType="Long" >
+            SELECT COUNT(ID) FROM T_MOBILE_LOCATION_PROCESSED
+            <include refid="sql_where"/>			
+	</select>
+	
+	<select id="exportAll" parameterType="map" resultType="MobileLocation" resultMap="mobileLocationResultMap">
+            <include refid="sql_select"/> 
+            <include refid="sql_where"/>
+		  	LIMIT 0,100000
+	</select>
+	
+	<select id="exportSelections" resultType="MobileLocation" resultMap="mobileLocationResultMap">
+            <include refid="sql_select"/>
+            WHERE ID IN
+            <foreach item="item" index="index" collection="list"   
+                     open="(" separator="," close=")">  
+                     #{item}  
+             </foreach> 
+	</select>
+	
+	<select id="queryLocationsByImei" parameterType="map" resultType="MobileLocation" resultMap="mobileLocationResultMap">
+	        SELECT * FROM T_MOBILE_LOCATION_PROCESSED WHERE 1=1
+	        	<if test="imei != ''">
+			    	AND IMEI = #{imei}
+			  	</if>
+			  	AND LOCATION_TIME &lt;= #{locationTime}
+	        	ORDER BY LOCATION_TIME ASC
+	            LIMIT 0,#{locationNums}
+	</select>
+	
+	<select id="load" parameterType="Long" resultType="MobileLocation"
+		resultMap="mobileLocationResultMap">
+        <![CDATA[
+            SELECT * FROM T_MOBILE_LOCATION_PROCESSED WHERE ID = #{id} 
+        ]]>
+	</select>
+
+	<select id="loadAll" resultType="MobileLocation" resultMap="mobileLocationResultMap">
+        <![CDATA[
+            SELECT * FROM T_MOBILE_LOCATION_PROCESSED
+        ]]>
+	</select>
+
+	<insert id="save" parameterType="MobileLocation" useGeneratedKeys="true"
+		keyProperty="id">
+		INSERT INTO T_MOBILE_LOCATION (
+			ID,IMEI,LONGITUDE,LATITUDE,LOCATION_TIME,ADDRESS,UPLOAD_TIME,EXTEND_PROP1,EXTEND_PROP2,
+			CREATOR_ID,CREATOR,CREATED_TIME
+		) VALUES (
+			#{id},#{imei},#{longitude},#{latitude},#{locationTime},#{address},#{uploadTime},#{extendProp1},#{extendProp2},
+			#{creatorId},#{creator},#{createdTime}
+		)
+	</insert>
+
+	<insert id="processRecord">
+		<![CDATA[
+			INSERT INTO T_MOBILE_LOCATION_PROCESSED(ID, IMEI, LONGITUDE, LATITUDE, LOCATION_TIME, ADDRESS, UPLOAD_TIME, EXTEND_PROP1, EXTEND_PROP2, EXTEND_PROP3, CREATOR_ID, CREATOR, CREATED_TIME, LAST_OPERATOR_ID, LAST_OPERATOR, LAST_OPERATED_TIME, EXTEND_PROP4, EXTEND_PROP5)
+				SELECT a.ID, a.IMEI, a.LONGITUDE, a.LATITUDE, a.LOCATION_TIME, a.ADDRESS, a.UPLOAD_TIME, a.EXTEND_PROP1, a.EXTEND_PROP2, a.EXTEND_PROP3, a.CREATOR_ID, a.CREATOR, a.CREATED_TIME, a.LAST_OPERATOR_ID, a.LAST_OPERATOR, a.LAST_OPERATED_TIME, 'default','default' FROM T_MOBILE_LOCATION a WHERE 1=1
+					AND NOT EXISTS(SELECT 1 FROM T_MOBILE_LOCATION_PROCESSED b where b.id=a.id)
+					AND a.IMEI IS NOT NULL 
+					AND a.IMEI<>''
+					AND a.id>=#{beginId} AND a.id<#{endId}
+					GROUP BY a.IMEI, a.LOCATION_TIME ORDER BY a.id
+		 ]]>
+	</insert>
+	
+	<delete id="deleteOldRecord">
+	<![CDATA[
+		DELETE FROM T_MOBILE_LOCATION WHERE  IMEI='' OR IMEI IS NULL OR EXISTS(SELECT 1 FROM T_MOBILE_LOCATION_PROCESSED b WHERE T_MOBILE_LOCATION.ID=b.ID)
+	]]>
+	</delete>
+	
+	<select id="getProcessRecordIds" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT MIN(a.ID) minId, MAX(a.ID) maxId FROM T_MOBILE_LOCATION a WHERE 1=1
+			AND a.UPLOAD_TIME>=#{beginTime} AND a.UPLOAD_TIME<#{endTime}
+			AND EXISTS(SELECT 1 FROM T_MOBILE_LOCATION_PROCESSED b WHERE a.ID>b.ID)
+		 ]]>
+	</select>
+	
+	<update id="updateChannel">
+		<![CDATA[
+			UPDATE t_app_install_log a INNER JOIN t_mobile_location_processed b 
+			ON b.IMEI = a.IMEI AND b.EXTEND_PROP4 = 'default' AND b.UPLOAD_TIME>=#{beginTime} AND b.UPLOAD_TIME<#{endTime} SET
+			b.EXTEND_PROP5 = a.ORG_NAME,b.EXTEND_PROP4 = (SELECT c.CODE FROM m_organization c WHERE c.ID = a.ORG_ID);
+		]]>
+	</update>
+	
+	<!-- 
+	<sql id="createTable">
+	<![CDATA[
+		CREATE TABLE T_MOBILE_LOCATION
+		(
+			ID BIGINT(20) NOT NULL PRIMARY KEY AUTO_INCREMENT,
+	 		IMEI VARCHAR(255),
+	 		LONGITUDE DOUBLE DEFAULT 0.0,
+	 		LATITUDE DOUBLE DEFAULT 0.0,
+			LOCATION_TIME DATETIME,
+			ADDRESS VARCHAR(1000),
+			UPLOAD_TIME DATETIME,
+			EXTEND_PROP1 VARCHAR(255),
+			EXTEND_PROP2 VARCHAR(255),
+			EXTEND_PROP3 VARCHAR(20),
+			CREATOR_ID BIGINT(20),
+	 		CREATOR VARCHAR(255),
+			CREATED_TIME DATETIME,
+			LAST_OPERATOR_ID BIGINT(20),
+	 		LAST_OPERATOR VARCHAR(255),
+			LAST_OPERATED_TIME DATETIME,
+			
+			INDEX IX_M_OLC_IME(IMEI),
+			INDEX IX_M_OLC_ULTIME(UPLOAD_TIME)
+		)ENGINE=INNODB  DEFAULT CHARSET=UTF8 DEFAULT COLLATE=UTF8_BIN;
+	]]>
+	</sql>
+
+	<sql id="createTable_processed">
+	<![CDATA[
+		CREATE TABLE T_MOBILE_LOCATION_PROCESSED
+		(
+			ID BIGINT(20) NOT NULL PRIMARY KEY AUTO_INCREMENT,
+	 		IMEI VARCHAR(255),
+	 		LONGITUDE DOUBLE DEFAULT 0.0,
+	 		LATITUDE DOUBLE DEFAULT 0.0,
+			LOCATION_TIME DATETIME,
+			ADDRESS VARCHAR(1000),
+			UPLOAD_TIME DATETIME,
+			EXTEND_PROP1 VARCHAR(255),
+			EXTEND_PROP2 VARCHAR(255),
+			EXTEND_PROP3 VARCHAR(20),
+			EXTEND_PROP4 VARCHAR(255),
+			EXTEND_PROP5 VARCHAR(255),
+			
+			CREATOR_ID BIGINT(20),
+	 		CREATOR VARCHAR(255),
+			CREATED_TIME DATETIME,
+			LAST_OPERATOR_ID BIGINT(20),
+	 		LAST_OPERATOR VARCHAR(255),
+			LAST_OPERATED_TIME DATETIME,
+			
+			INDEX IX_M_LC_IMEI(IMEI),
+			INDEX IX_M_LC_LCTIME(LOCATION_TIME),
+			INDEX IX_M_LC_ULTIME(UPLOAD_TIME)
+		)ENGINE=INNODB  DEFAULT CHARSET=UTF8 DEFAULT COLLATE=UTF8_BIN;
+	]]>
+	</sql>
+	 -->
+</mapper>

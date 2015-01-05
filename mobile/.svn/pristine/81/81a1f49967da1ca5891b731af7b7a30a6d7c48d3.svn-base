@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper
+	namespace="com.jshuabo.mobile.server.dao.batchinstall.IMobilePhoneDriverMapper">
+
+	<resultMap id="mobilePhoneDriverResultMap" type="MobilePhoneDriver">
+		<id column="ID" property="id" jdbcType="BIGINT" />
+		<result column="PHONE_MODEL" property="phoneModel" jdbcType="VARCHAR" />
+		<result column="DREVER_PATH" property="driverPath" jdbcType="VARCHAR" />
+		<result column="DRIVER_VERSION" property="driverVersion"
+			jdbcType="VARCHAR" />
+		<result column="DESCRIPTION" property="description" jdbcType="VARCHAR" />
+		<result column="STATUS" property="status" jdbcType="VARCHAR" />
+
+		<result property="info.creatorId" column="CREATOR_ID" />
+		<result property="info.creator" column="CREATOR" />
+		<result property="info.createdTime" column="CREATED_TIME" />
+		<result property="info.lastOperatorId" column="LAST_OPERATOR_ID" />
+		<result property="info.lastOperator" column="LAST_OPERATOR" />
+		<result property="info.lastOperatedTime" column="LAST_OPERATED_TIME" />
+	</resultMap>
+
+	<sql id="createTable">
+	<![CDATA[
+			CREATE TABLE `t_mobile_phone_driver` (
+				  `ID` bigint(20) NOT NULL PRIMARY KEY auto_increment,
+				  `PHONE_MODEL` varchar(255) default NULL,
+				  `DREVER_PATH` varchar(255) default NULL,
+				  `DRIVER_VERSION` varchar(255) default NULL,
+				  `DESCRIPTION` varchar(255) default NULL,
+				  `STATUS` varchar(255) default NULL,
+				  `CREATED_TIME` date default NULL,
+				  `CREATOR_ID` bigint(20) default NULL,
+				  `CREATOR` varchar(255) default NULL,
+				  `LAST_OPERATOR_ID` bigint(20) default NULL,
+				  `LAST_OPERATOR` varchar(255) default NULL,
+				  `LAST_OPERATED_TIME` date default NULL,
+				  PRIMARY KEY  (`ID`)
+				) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+			
+	]]>
+	</sql>
+	<sql id="Base_Column_List">
+		ID, PHONE_MODEL, DREVER_PATH, DRIVER_VERSION, DESCRIPTION,
+		STATUS,CREATED_TIME, CREATOR_ID,
+		CREATOR,
+		LAST_OPERATOR_ID,
+		LAST_OPERATOR, LAST_OPERATED_TIME
+	</sql>
+
+	<select id="load" resultMap="mobilePhoneDriverResultMap"
+		parameterType="java.lang.Long">
+		select
+		<include refid="Base_Column_List" />
+		from t_mobile_phone_driver
+		where ID = #{id,jdbcType=BIGINT}
+	</select>
+
+	<delete id="delete" parameterType="java.lang.Long">
+		delete from
+		t_mobile_phone_driver
+		where ID = #{id,jdbcType=BIGINT}
+	</delete>
+
+	<insert id="save" parameterType="MobilePhoneDriver">
+
+		insert into
+		t_mobile_phone_driver (ID, PHONE_MODEL, DREVER_PATH,
+		DRIVER_VERSION,
+		DESCRIPTION, STATUS,CREATED_TIME, CREATOR_ID,
+		CREATOR,
+		LAST_OPERATOR_ID, LAST_OPERATOR, LAST_OPERATED_TIME
+		)
+		values
+		(#{id,jdbcType=BIGINT}, #{phoneModel,jdbcType=VARCHAR},
+		#{dreverPath,jdbcType=VARCHAR},
+		#{driverVersion,jdbcType=VARCHAR},
+		#{description,jdbcType=VARCHAR}, #{status,jdbcType=VARCHAR},
+		#{createdTime,jdbcType=DATE},
+		#{creatorId,jdbcType=BIGINT},
+		#{creator,jdbcType=VARCHAR},
+		#{lastOperatorId,jdbcType=BIGINT},
+		#{lastOperator,jdbcType=VARCHAR}, #{lastOperatedTime,jdbcType=DATE})
+	</insert>
+
+	<update id="update" parameterType="MobilePhoneDriver">
+
+		update t_mobile_phone_driver
+		set PHONE_MODEL = #{phoneModel,jdbcType=VARCHAR},
+		DREVER_PATH =
+		#{dreverPath,jdbcType=VARCHAR},
+		DRIVER_VERSION =
+		#{driverVersion,jdbcType=VARCHAR},
+		DESCRIPTION =
+		#{description,jdbcType=VARCHAR},
+		STATUS = #{status,jdbcType=VARCHAR},
+		CREATED_TIME = #{createdTime,jdbcType=DATE},
+		CREATOR_ID =
+		#{creatorId,jdbcType=BIGINT},
+		CREATOR = #{creator,jdbcType=VARCHAR},
+		LAST_OPERATOR_ID = #{lastOperatorId,jdbcType=BIGINT},
+		LAST_OPERATOR =
+		#{lastOperator,jdbcType=VARCHAR},
+		LAST_OPERATED_TIME =
+		#{lastOperatedTime,jdbcType=DATE}
+		where ID = #{id,jdbcType=BIGINT}
+		where ID = #{id,jdbcType=BIGINT}
+	</update>
+</mapper>

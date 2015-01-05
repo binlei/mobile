@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.jshuabo.mobile.server.dao.mobile.IMobileAppInstallResultMapper">
+	<resultMap type="MobileAppInstallResult" id="mobileAppInstallResultMap">
+		<id property="id" column="ID" />
+		<result property="imei" column="IMEI" />
+		<result property="installTime" column="INSTALL_TIME" />
+		<result property="installStatus" column="INSTALL_STATUS" />
+		<result property="appName" column="APP_NAME" />
+		<result property="packageName" column="PACKAGE_NAME" />
+		<result property="extendProp1" column="EXTEND_PROP1" />
+		<result property="extendProp2" column="EXTEND_PROP2" />
+		<result property="extendProp3" column="EXTEND_PROP3" />
+		<result property="extendProp4" column="EXTEND_PROP4" />
+		<result property="extendProp5" column="EXTEND_PROP5" />
+
+		<result property="info.creatorId" column="CREATOR_ID" />
+		<result property="info.creator" column="CREATOR" />
+		<result property="info.createdTime" column="CREATED_TIME" />
+		<result property="info.lastOperatorId" column="LAST_OPERATOR_ID" />
+		<result property="info.lastOperator" column="LAST_OPERATOR" />
+		<result property="info.lastOperatedTime" column="LAST_OPERATED_TIME" />
+	</resultMap>
+
+	<insert id="save" parameterType="MobileAppInstallResult" useGeneratedKeys="true"
+		keyProperty="id">
+		INSERT INTO T_MOBILE_APP_INSTALL_RESULT (
+			ID,IMEI,INSTALL_TIME,INSTALL_STATUS,APP_NAME,PACKAGE_NAME,CREATOR_ID,CREATOR,CREATED_TIME,EXTEND_PROP1,EXTEND_PROP2,EXTEND_PROP3,EXTEND_PROP4,EXTEND_PROP5
+		) VALUES (
+			#{id},#{imei},#{installTime},#{installStatus},#{appName},#{packageName},#{creatorId},#{creator},#{createdTime},#{extendProp1},#{extendProp2},#{extendProp3},#{extendProp4},#{extendProp5}
+		)
+	</insert>
+
+	<sql id="sql_select">
+		SELECT ID,IMEI,INSTALL_TIME,INSTALL_STATUS,APP_NAME,PACKAGE_NAME,EXTEND_PROP1,EXTEND_PROP2,EXTEND_PROP3,EXTEND_PROP4,EXTEND_PROP5 FROM T_MOBILE_APP_INSTALL_RESULT
+		FORCE INDEX(PRI)
+	</sql>
+	
+	<sql id="sql_where">
+		WHERE 1=1
+        	<if test="imei != '' and imei != null">
+		    	AND IMEI  = #{imei}
+		  	</if>
+			<if test="appName != '' and appName != null">
+		    	AND APP_NAME = #{appName}
+		  	</if>
+			<if test="packageName != '' and packageName != null">
+		    	AND PACKAGE_NAME = #{packageName}
+		  	</if>
+		  	
+		  	<if test="installTime_from != '' and installTime_from != null">
+		    	AND INSTALL_TIME &gt;= CONCAT(#{installTime_from},' 00:00:00' )
+		  	</if>
+		  	<if test="installTime_to != '' and installTime_to != null">
+		    	AND INSTALL_TIME &lt;= CONCAT(#{installTime_to},' 23:59:59' )
+		  	</if>
+			<if test="installStatus != '' and installStatus != null">
+		    	AND INSTALL_STATUS = #{installStatus}
+		  	</if>
+		  	<if test="extendProp4 != '' and extendProp4 !=null">
+		    	AND EXTEND_PROP4 IN
+		    	<foreach item="item" index="index" collection="extendProp4"   
+	                   open="(" separator="," close=")">  
+	                   #{item}  
+	           	</foreach>
+		  	</if>
+	</sql>
+	<select id="page" parameterType="map" resultType="MobileAppInstallResult" resultMap="mobileAppInstallResultMap">
+			<include refid="sql_select"/>
+			<include refid="sql_where"/>
+            <choose>
+		  		<when test="sortOrder != null">
+		  			ORDER BY ${sortOrder}
+		  		</when>
+		  		<otherwise>
+		  			ORDER BY INSTALL_TIME DESC
+		  		</otherwise>
+		  	</choose>
+            LIMIT #{offset}, #{rows}
+	</select>
+	
+	<select id="total" parameterType="map" resultType="Long" >
+        SELECT count(*) FROM T_MOBILE_APP_INSTALL_RESULT FORCE INDEX(PRI)
+            <include refid="sql_where"/>			
+	</select>
+	<!-- 
+	<sql id="createTable">
+	<![CDATA[
+		CREATE TABLE T_MOBILE_APP_INSTALL_RESULT
+		(
+			ID BIGINT(20) NOT NULL PRIMARY KEY AUTO_INCREMENT,
+	 		IMEI VARCHAR(255),
+	 		INSTALL_TIME DATETIME,
+	 		INSTALL_STATUS INT,
+	 		APP_NAME VARCHAR(255),
+	 		PACKAGE_NAME VARCHAR(500),
+	 		EXTEND_PROP1 VARCHAR(255),
+			EXTEND_PROP2 VARCHAR(255),
+			EXTEND_PROP3 VARCHAR(20),
+			EXTEND_PROP4 VARCHAR(255),
+			EXTEND_PROP5 VARCHAR(255),
+			
+			CREATOR_ID BIGINT(20),
+	 		CREATOR VARCHAR(255),
+			CREATED_TIME DATETIME,
+			LAST_OPERATOR_ID BIGINT(20),
+	 		LAST_OPERATOR VARCHAR(255),
+			LAST_OPERATED_TIME DATETIME,
+			
+			INDEX IX_M_AIR_IMEI(IMEI)
+		)ENGINE=INNODB  DEFAULT CHARSET=UTF8 DEFAULT COLLATE=UTF8_BIN;
+	]]>
+	</sql>
+	 -->
+</mapper>

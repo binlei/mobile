@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.jshuabo.mobile.server.dao.mobile.IMobileDataUsageMapper">
+	<resultMap type="MobileDataUsage" id="mobileDataUsageResultMap">
+		<id property="id" column="ID" />
+		<result property="imei" column="IMEI" />
+		<result property="simOperator" column="SIM_OPERATOR" />
+		<result property="g23Time" column="G23_TIME" />
+		<result property="g23Usage" column="G23_USAGE" />
+		<result property="wifiTime" column="WIFI_TIME" />
+		<result property="wifiUsage" column="WIFI_USAGE" />
+		<result property="statisticalTime" column="STATISTICAL_TIME" />
+		<result property="uploadTime" column="UPLOAD_TIME" />
+		<result property="extendProp1" column="EXTEND_PROP1" />
+		<result property="extendProp2" column="EXTEND_PROP2" />
+		<result property="extendProp3" column="EXTEND_PROP3" />
+		<result property="extendProp4" column="EXTEND_PROP4" />
+		<result property="extendProp5" column="EXTEND_PROP5" />
+
+		<result property="info.creatorId" column="CREATOR_ID" />
+		<result property="info.creator" column="CREATOR" />
+		<result property="info.createdTime" column="CREATED_TIME" />
+		<result property="info.lastOperatorId" column="LAST_OPERATOR_ID" />
+		<result property="info.lastOperator" column="LAST_OPERATOR" />
+		<result property="info.lastOperatedTime" column="LAST_OPERATED_TIME" />
+	</resultMap>
+
+	<sql id="sql_select">
+		SELECT ID,IMEI,SIM_OPERATOR,G23_TIME,G23_USAGE,WIFI_TIME,WIFI_USAGE,STATISTICAL_TIME,UPLOAD_TIME,EXTEND_PROP1,EXTEND_PROP2,EXTEND_PROP5 FROM T_MOBILE_DATA_USAGE_PROCESSED
+		FORCE INDEX(PRI)
+	</sql>
+	
+	<sql id="sql_where">
+		WHERE 1=1
+        	<if test="imei != ''">
+		    	AND IMEI = #{imei}
+		  	</if>
+			<if test="simOperator != ''">
+		    	AND SIM_OPERATOR = #{simOperator}
+		  	</if>
+		  	<if test="extendProp2 != ''">
+		    	AND EXTEND_PROP2 = #{extendProp2}
+		  	</if>
+		  	<if test="extendProp4 != '' and extendProp4 !=null">
+		    	AND EXTEND_PROP4 IN
+		    	<foreach item="item" index="index" collection="extendProp4"   
+	                   open="(" separator="," close=")">  
+	                   #{item}  
+	           	</foreach>
+		  	</if>
+		  	
+		  	<if test="statisticalTime_from != ''">
+		    	AND STATISTICAL_TIME &gt;= CONCAT(#{statisticalTime_from},' 00:00:00' )
+		  	</if>
+		  	<if test="statisticalTime_to != ''">
+		    	AND STATISTICAL_TIME &lt;= CONCAT(#{statisticalTime_from},' 23:59:59' )
+		  	</if>
+		  	<if test="uploadTime_from != ''">
+		    	AND UPLOAD_TIME &gt;= CONCAT(#{uploadTime_from},' 00:00:00' )
+		  	</if>
+		  	<if test="uploadTime_to != ''">
+		    	AND UPLOAD_TIME &lt;= CONCAT(#{uploadTime_to},' 23:59:59' )
+		  	</if>
+	</sql>
+	
+	<select id="page" parameterType="map" resultType="MobileDataUsage" resultMap="mobileDataUsageResultMap">
+        <include refid="sql_select"/> 
+		<include refid="sql_where"/>	
+        <if test="sortOrder != null">
+	  		ORDER BY ${sortOrder}
+		</if>
+        LIMIT #{offset}, #{rows}
+	</select>
+	
+	<select id="total" parameterType="map" resultType="Long" >
+            SELECT count(*) FROM T_MOBILE_DATA_USAGE_PROCESSED FORCE INDEX(PRI)
+            <include refid="sql_where"/>		
+	</select>
+	
+	<select id="exportAll" parameterType="map" resultType="MobileDataUsage" resultMap="mobileDataUsageResultMap">
+            <include refid="sql_select"/>
+            <include refid="sql_where"/>	
+		  	LIMIT 0,100000
+	</select>
+	
+	<select id="exportSelections" resultType="MobileDataUsage" resultMap="mobileDataUsageResultMap">
+            <include refid="sql_select"/>
+            WHERE ID IN
+            <foreach item="item" index="index" collection="list"   
+                     open="(" separator="," close=")">  
+                     #{item}  
+             </foreach> 
+	</select>
+	
+	<select id="load" parameterType="Long" resultType="MobileDataUsage"
+		resultMap="mobileDataUsageResultMap">
+        <![CDATA[
+            SELECT * FROM T_MOBILE_DATA_USAGE_PROCESSED WHERE ID = #{id} 
+        ]]>
+	</select>
+
+	<select id="loadAll" resultType="MobileDataUsage" resultMap="mobileDataUsageResultMap">
+        <![CDATA[
+            SELECT * FROM T_MOBILE_DATA_USAGE_PROCESSED
+        ]]>
+	</select>
+
+	<insert id="save" parameterType="MobileDataUsage" useGeneratedKeys="true"
+		keyProperty="id">
+		INSERT INTO T_MOBILE_DATA_USAGE (
+			ID,IMEI,SIM_OPERATOR,G23_TIME,G23_USAGE,WIFI_TIME,WIFI_USAGE,STATISTICAL_TIME,UPLOAD_TIME,EXTEND_PROP1,EXTEND_PROP2,
+			CREATOR_ID,CREATOR,CREATED_TIME
+		) VALUES (
+			#{id},#{imei},#{simOperator},#{g23Time},#{g23Usage},#{wifiTime},#{wifiUsage},#{statisticalTime},#{uploadTime},#{extendProp1},#{extendProp2},
+			#{creatorId},#{creator},#{createdTime}
+		)
+	</insert>
+	
+	<insert id="processRecord">
+		<![CDATA[
+			INSERT INTO T_MOBILE_DATA_USAGE_PROCESSED(ID, IMEI, SIM_OPERATOR, G23_TIME, G23_USAGE, WIFI_TIME, WIFI_USAGE, STATISTICAL_TIME, UPLOAD_TIME, EXTEND_PROP1, EXTEND_PROP2, EXTEND_PROP3, CREATOR_ID, CREATOR, CREATED_TIME, LAST_OPERATOR_ID, LAST_OPERATOR, LAST_OPERATED_TIME, EXTEND_PROP4, EXTEND_PROP5)
+				SELECT a.ID, a.IMEI, a.SIM_OPERATOR, a.G23_TIME, a.G23_USAGE, a.WIFI_TIME, a.WIFI_USAGE, a.STATISTICAL_TIME, a.UPLOAD_TIME, a.EXTEND_PROP1, a.EXTEND_PROP2, a.EXTEND_PROP3, a.CREATOR_ID, a.CREATOR, a.CREATED_TIME, a.LAST_OPERATOR_ID, a.LAST_OPERATOR, a.LAST_OPERATED_TIME,'default','default' FROM T_MOBILE_DATA_USAGE a WHERE 1=1
+					AND NOT EXISTS(SELECT 1 FROM T_MOBILE_DATA_USAGE_PROCESSED b where b.id=a.id)
+					AND a.IMEI IS NOT NULL 
+					AND a.IMEI<>''
+					AND a.id>=#{beginId} AND a.id<#{endId}
+		 ]]>
+	</insert>
+	
+	<delete id="deleteOldRecord">
+	<![CDATA[
+		DELETE FROM T_MOBILE_DATA_USAGE WHERE  IMEI='' OR IMEI IS NULL OR EXISTS(SELECT 1 FROM T_MOBILE_DATA_USAGE_PROCESSED b WHERE T_MOBILE_DATA_USAGE.ID=b.ID)
+	]]>
+	</delete>
+	
+	<select id="getProcessRecordIds" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT MIN(a.ID) minId, MAX(a.ID) maxId FROM T_MOBILE_DATA_USAGE a WHERE 1=1
+			AND a.UPLOAD_TIME>=#{beginTime} AND a.UPLOAD_TIME<#{endTime}
+			AND EXISTS(SELECT 1 FROM T_MOBILE_DATA_USAGE_PROCESSED b WHERE a.ID>b.ID)
+		 ]]>
+	</select>
+	
+	<update id="updateChannel">
+		<![CDATA[
+			UPDATE t_app_install_log a INNER JOIN t_mobile_data_usage_processed b 
+			ON b.IMEI = a.IMEI AND b.EXTEND_PROP4 = 'default' AND b.UPLOAD_TIME>=#{beginTime} AND b.UPLOAD_TIME<#{endTime} SET
+			b.EXTEND_PROP5 = a.ORG_NAME,b.EXTEND_PROP4 = (SELECT c.CODE FROM m_organization c WHERE c.ID = a.ORG_ID);
+		]]>
+	</update>
+	
+	<!-- 
+	<sql id="createTable">
+	<![CDATA[
+		CREATE TABLE T_MOBILE_DATA_USAGE
+		(
+			ID BIGINT(20) NOT NULL PRIMARY KEY AUTO_INCREMENT,
+	 		IMEI VARCHAR(255),
+	 		SIM_OPERATOR VARCHAR(255),
+	 		G23_TIME BIGINT(20) DEFAULT 0,
+	 		G23_USAGE BIGINT(20) DEFAULT 0,
+	 		WIFI_TIME BIGINT(20) DEFAULT 0,
+	 		WIFI_USAGE BIGINT(20) DEFAULT 0,
+	 		STATISTICAL_TIME DATETIME,
+	 		UPLOAD_TIME DATETIME,
+			EXTEND_PROP1 VARCHAR(255),
+			EXTEND_PROP2 VARCHAR(255),
+			EXTEND_PROP3 VARCHAR(20),
+			CREATOR_ID BIGINT(20),
+	 		CREATOR VARCHAR(255),
+			CREATED_TIME DATETIME,
+			LAST_OPERATOR_ID BIGINT(20),
+	 		LAST_OPERATOR VARCHAR(255),
+			LAST_OPERATED_TIME DATETIME,
+			
+			INDEX IX_M_ODU_ULTIME(UPLOAD_TIME)
+		)ENGINE=INNODB  DEFAULT CHARSET=UTF8 DEFAULT COLLATE=UTF8_BIN;
+	]]>
+	</sql>
+
+	<sql id="createTable_processed">
+	<![CDATA[
+		CREATE TABLE T_MOBILE_DATA_USAGE_PROCESSED
+		(
+			ID BIGINT(20) NOT NULL PRIMARY KEY AUTO_INCREMENT,
+	 		IMEI VARCHAR(255),
+	 		SIM_OPERATOR VARCHAR(255),
+	 		G23_TIME BIGINT(20) DEFAULT 0,
+	 		G23_USAGE BIGINT(20) DEFAULT 0,
+	 		WIFI_TIME BIGINT(20) DEFAULT 0,
+	 		WIFI_USAGE BIGINT(20) DEFAULT 0,
+	 		STATISTICAL_TIME DATETIME,
+	 		UPLOAD_TIME DATETIME,
+			EXTEND_PROP1 VARCHAR(255),
+			EXTEND_PROP2 VARCHAR(255),
+			EXTEND_PROP3 VARCHAR(20),
+			EXTEND_PROP4 VARCHAR(255),
+			EXTEND_PROP5 VARCHAR(255),
+			
+			CREATOR_ID BIGINT(20),
+	 		CREATOR VARCHAR(255),
+			CREATED_TIME DATETIME,
+			LAST_OPERATOR_ID BIGINT(20),
+	 		LAST_OPERATOR VARCHAR(255),
+			LAST_OPERATED_TIME DATETIME,
+			
+			INDEX IX_M_DU_IMEI(IMEI),
+			INDEX IX_M_DU_STIME(STATISTICAL_TIME),
+			INDEX IX_M_DU_ULTIME(UPLOAD_TIME)
+		)ENGINE=INNODB  DEFAULT CHARSET=UTF8 DEFAULT COLLATE=UTF8_BIN;
+	]]>
+	</sql>
+ 	-->
+</mapper>

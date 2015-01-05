@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.jshuabo.mobile.server.dao.mobile.IMobileAppInstalledMapper">
+	<resultMap type="MobileAppInstalled" id="mobileAppInstalledResultMap">
+		<id property="id" column="ID" />
+		<result property="imei" column="IMEI" />
+		<result property="appName" column="APP_NAME" />
+		<result property="packageName" column="PACKAGE_NAME" />
+		<result property="versionName" column="VERSION_NAME" />
+		<result property="versionNo" column="VERSION_NO" />
+		<result property="installedPath" column="INSTALLED_PATH" />
+		<result property="updateTime" column="UPDATE_TIME" />
+		<result property="uploadTime" column="UPLOAD_TIME" />
+		<result property="extendProp1" column="EXTEND_PROP1" />
+		<result property="extendProp2" column="EXTEND_PROP2" />
+		<result property="extendProp3" column="EXTEND_PROP3" />
+		<result property="extendProp4" column="EXTEND_PROP4" />
+		<result property="extendProp5" column="EXTEND_PROP5" />
+
+		<result property="info.creatorId" column="CREATOR_ID" />
+		<result property="info.creator" column="CREATOR" />
+		<result property="info.createdTime" column="CREATED_TIME" />
+		<result property="info.lastOperatorId" column="LAST_OPERATOR_ID" />
+		<result property="info.lastOperator" column="LAST_OPERATOR" />
+		<result property="info.lastOperatedTime" column="LAST_OPERATED_TIME" />
+	</resultMap>
+
+	<sql id="sql_select">
+		SELECT ID,IMEI,APP_NAME,PACKAGE_NAME,VERSION_NAME,VERSION_NO,INSTALLED_PATH,UPDATE_TIME,UPLOAD_TIME,EXTEND_PROP1,EXTEND_PROP2,EXTEND_PROP5
+         FROM T_MOBILE_APP_INSTALLED_PROCESSED
+	</sql>
+	<sql id="sql_where">
+			WHERE 1=1
+        	<if test="imei != '' and imei !=null">
+		    	AND IMEI  = #{imei}
+		  	</if>
+			<if test="appName != '' and appName !=null">
+		    	AND APP_NAME = #{appName}
+		  	</if>
+		  	<if test="extendProp2 != '' and extendProp2 !=null">
+		    	AND EXTEND_PROP2 = #{extendProp2}
+		  	</if>
+		  	<if test="extendProp4 != '' and extendProp4 !=null">
+		    	AND EXTEND_PROP4 IN
+		    	<foreach item="item" index="index" collection="extendProp4"   
+	                   open="(" separator="," close=")">  
+	                   #{item}  
+	           	</foreach>
+		  	</if>
+		  	
+		  	<if test="packageName != '' and packageName !=null">
+		    	AND PACKAGE_NAME = #{packageName}
+		  	</if>
+		  	<if test="uploadTime_from != '' and uploadTime_from !=null">
+		    	AND UPLOAD_TIME &gt;= CONCAT(#{uploadTime_from},' 00:00:00' )
+		  	</if>
+		  	<if test="uploadTime_to != '' and uploadTime_to !=null">
+		    	AND UPLOAD_TIME &lt;= CONCAT(#{uploadTime_to},' 23:59:59' )
+		  	</if>
+	</sql>
+	<select id="page" parameterType="map" resultType="MobileAppInstalled" resultMap="mobileAppInstalledResultMap">
+         	<include refid="sql_select"/>
+        	<include refid="sql_where"/>
+            <if test="sortOrder != null">
+		    	ORDER BY ${sortOrder}
+		  	</if>
+            LIMIT #{offset}, #{rows}
+	</select>
+	
+	<select id="total" parameterType="map" resultType="Long" >
+            SELECT count(ID) FROM T_MOBILE_APP_INSTALLED_PROCESSED
+            <include refid="sql_where"/>			
+	</select>
+	
+	<select id="exportAll" parameterType="map" resultType="MobileAppInstalled" resultMap="mobileAppInstalledResultMap">
+            <include refid="sql_select"/>
+            <include refid="sql_where"/>
+		  	LIMIT 0,100000	
+	</select>
+	
+	<select id="exportSelections" resultType="MobileAppInstalled" resultMap="mobileAppInstalledResultMap">
+            <include refid="sql_select"/>
+            WHERE ID IN
+            <foreach item="item" index="index" collection="list"   
+                     open="(" separator="," close=")">  
+                     #{item}  
+             </foreach> 
+	</select>
+	
+	<select id="queryByImei" parameterType="String" resultType="MobileAppInstalled"
+		resultMap="mobileAppInstalledResultMap">
+        <![CDATA[
+            SELECT * FROM T_MOBILE_APP_INSTALLED_PROCESSED 
+            WHERE IMEI = #{imei} ORDER BY UPDATE_TIME DESC
+        ]]>
+	</select>
+	
+	<select id="load" parameterType="Long" resultType="MobileAppInstalled"
+		resultMap="mobileAppInstalledResultMap">
+        <![CDATA[
+            SELECT * FROM T_MOBILE_APP_INSTALLED_PROCESSED WHERE ID = #{id} 
+        ]]>
+	</select>
+
+	<select id="loadAll" resultType="MobileAppInstalled" resultMap="mobileAppInstalledResultMap">
+        <![CDATA[
+            SELECT * FROM T_MOBILE_APP_INSTALLED_PROCESSED
+        ]]>
+	</select>
+
+	<insert id="save" parameterType="MobileAppInstalled" useGeneratedKeys="true"
+		keyProperty="id">
+		INSERT INTO T_MOBILE_APP_INSTALLED (
+			ID,IMEI,APP_NAME,PACKAGE_NAME,VERSION_NAME,VERSION_NO,INSTALLED_PATH,UPDATE_TIME, UPLOAD_TIME,EXTEND_PROP1,EXTEND_PROP2,
+			CREATOR_ID,CREATOR,CREATED_TIME
+		) VALUES (
+			#{id},#{imei},#{appName},#{packageName},#{versionName},#{versionNo},#{installedPath},#{updateTime},#{uploadTime},
+			#{extendProp1},#{extendProp2},#{creatorId},#{creator},#{createdTime}
+		)
+	</insert>
+
+	<insert id="processRecord">
+		<![CDATA[
+			INSERT INTO T_MOBILE_APP_INSTALLED_PROCESSED(ID, IMEI, APP_NAME, PACKAGE_NAME, VERSION_NAME, VERSION_NO, INSTALLED_PATH, UPDATE_TIME, UPLOAD_TIME, EXTEND_PROP1, EXTEND_PROP2, EXTEND_PROP3, CREATOR_ID, CREATOR, CREATED_TIME, LAST_OPERATOR_ID, LAST_OPERATOR, LAST_OPERATED_TIME, EXTEND_PROP4, EXTEND_PROP5)
+				SELECT a.ID, a.IMEI, a.APP_NAME, a.PACKAGE_NAME, a.VERSION_NAME, a.VERSION_NO, a.INSTALLED_PATH, a.UPDATE_TIME, a.UPLOAD_TIME, a.EXTEND_PROP1, a.EXTEND_PROP2, a.EXTEND_PROP3, a.CREATOR_ID, a.CREATOR, a.CREATED_TIME, a.LAST_OPERATOR_ID, a.LAST_OPERATOR, a.LAST_OPERATED_TIME, 'default','default' FROM T_MOBILE_APP_INSTALLED a WHERE 1=1
+					AND a.IMEI IS NOT NULL 
+					AND a.IMEI<>''
+					AND NOT EXISTS(SELECT 1 FROM T_MOBILE_APP_INSTALLED_PROCESSED b WHERE b.IMEI=a.IMEI AND b.APP_NAME=a.APP_NAME
+					                           AND b.PACKAGE_NAME=a.PACKAGE_NAME AND a.VERSION_NAME=b.VERSION_NAME)
+					AND NOT EXISTS(SELECT 1 FROM T_MOBILE_APP_INSTALLED_PROCESSED c WHERE c.ID=a.ID)
+					AND a.id>=#{beginId} AND a.id<#{endId}
+					GROUP BY a.IMEI, a.APP_NAME, a.PACKAGE_NAME, a.VERSION_NAME ORDER BY a.ID
+		 ]]>
+	</insert>
+	
+	<delete id="deleteOldRecord">
+	<![CDATA[
+		DELETE FROM T_MOBILE_APP_INSTALLED WHERE  IMEI='' OR IMEI IS NULL OR EXISTS(SELECT 1 FROM T_MOBILE_APP_INSTALLED_PROCESSED b WHERE T_MOBILE_APP_INSTALLED.ID=b.ID)
+	]]>
+	</delete>
+	
+	<select id="getProcessRecordIds" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT MIN(a.ID) minId, MAX(a.ID) maxId FROM T_MOBILE_APP_INSTALLED a WHERE 1=1
+			AND EXISTS(SELECT 1 FROM T_MOBILE_APP_INSTALLED_PROCESSED b WHERE a.ID>b.ID)
+			AND a.UPLOAD_TIME>=#{beginTime} AND a.UPLOAD_TIME<#{endTime}
+		 ]]>
+	</select>
+	
+	<insert id="processAppUsageRecord">
+		<![CDATA[
+			INSERT INTO T_MOBILE_APP_UPDATE_TOTAL_PROCESSED(TYPE, INSTALL_ID, MODIFY_ID, IMEI,
+			   APP_NAME, PACKAGE_NAME, VERSION_NAME, MODIFY_TYPE, UPDATE_TIME, EXTEND_PROP1, EXTEND_PROP2, EXTEND_PROP3, EXTEND_PROP4, EXTEND_PROP5)
+				
+				SELECT
+				  'INSTALL' TYPE,
+				  a.ID INSTALL_ID,
+				  0 MODIFY_ID,
+				  a.IMEI,
+				  a.APP_NAME,
+				  a.PACKAGE_NAME,
+				  a.VERSION_NAME,
+				  1 MODIFY_TYPE,
+				  CASE
+				    WHEN ABS(a.UPDATE_TIME - a.UPLOAD_TIME)>=15552000 THEN a.UPLOAD_TIME
+				    ELSE a.UPDATE_TIME
+				  END,
+				  a.EXTEND_PROP1,
+				  a.EXTEND_PROP2,
+				  a.EXTEND_PROP3,
+				  'default','default'
+				FROM T_MOBILE_APP_INSTALLED_PROCESSED a
+				WHERE 1=1
+					AND NOT EXISTS (SELECT 1 FROM T_MOBILE_APP_UPDATE_TOTAL_PROCESSED b WHERE b.INSTALL_ID=a.ID)
+					AND a.id>=#{beginId} AND a.id<#{endId}
+		 ]]>
+	</insert>
+	
+	<select id="getProcessedRecordIds" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT MIN(a.ID) minId, MAX(a.ID) maxId FROM T_MOBILE_APP_INSTALLED_PROCESSED a WHERE 1=1
+			AND a.UPLOAD_TIME>=#{beginTime} AND a.UPLOAD_TIME<#{endTime}
+		 ]]>
+	</select>
+	
+	<update id="updateChannel">
+		<![CDATA[
+			UPDATE t_app_install_log a INNER JOIN t_mobile_app_installed_processed b 
+			ON b.IMEI = a.IMEI AND b.EXTEND_PROP4 = 'default' AND b.UPLOAD_TIME>=#{beginTime} AND b.UPLOAD_TIME<#{endTime} SET
+			b.EXTEND_PROP5 = a.ORG_NAME,b.EXTEND_PROP4 = (SELECT c.CODE FROM m_organization c WHERE c.ID = a.ORG_ID);
+		]]>
+	</update>
+	
+	<!-- 
+	<sql id="createTable">
+	<![CDATA[
+		CREATE TABLE T_MOBILE_APP_INSTALLED
+		(
+			ID BIGINT(20) NOT NULL PRIMARY KEY AUTO_INCREMENT,
+			IMEI VARCHAR(255),
+	 		APP_NAME VARCHAR(255),
+	 		PACKAGE_NAME VARCHAR(255),
+	 		VERSION_NAME VARCHAR(255),
+	 		VERSION_NO VARCHAR(255),
+	 		INSTALLED_PATH VARCHAR(400),
+	 		UPDATE_TIME DATETIME,
+	 		UPLOAD_TIME DATETIME,
+			EXTEND_PROP1 VARCHAR(255),
+			EXTEND_PROP2 VARCHAR(255),
+			EXTEND_PROP3 VARCHAR(20),
+			CREATOR_ID BIGINT(20),
+	 		CREATOR VARCHAR(255),
+			CREATED_TIME DATETIME,
+			LAST_OPERATOR_ID BIGINT(20),
+	 		LAST_OPERATOR VARCHAR(255),
+			LAST_OPERATED_TIME DATETIME,
+			
+			INDEX IX_M_OAI_IS(IMEI, APP_NAME, PACKAGE_NAME, VERSION_NAME),
+			INDEX IX_M_OAI_IS_ULTIME(UPLOAD_TIME)
+		)ENGINE=INNODB  DEFAULT CHARSET=UTF8 DEFAULT COLLATE=UTF8_BIN;
+	]]>
+	</sql>
+
+	<sql id="createTable_processed">
+	<![CDATA[
+		CREATE TABLE T_MOBILE_APP_INSTALLED_PROCESSED
+		(
+			ID BIGINT(20) NOT NULL PRIMARY KEY AUTO_INCREMENT,
+			IMEI VARCHAR(255),
+	 		APP_NAME VARCHAR(255),
+	 		PACKAGE_NAME VARCHAR(255),
+	 		VERSION_NAME VARCHAR(255),
+	 		VERSION_NO VARCHAR(255),
+	 		INSTALLED_PATH VARCHAR(400),
+	 		UPDATE_TIME DATETIME,
+	 		UPLOAD_TIME DATETIME,
+			EXTEND_PROP1 VARCHAR(255),
+			EXTEND_PROP2 VARCHAR(255),
+			EXTEND_PROP3 VARCHAR(20),
+			EXTEND_PROP4 VARCHAR(255),
+			EXTEND_PROP5 VARCHAR(255),
+			
+			CREATOR_ID BIGINT(20),
+	 		CREATOR VARCHAR(255),
+			CREATED_TIME DATETIME,
+			LAST_OPERATOR_ID BIGINT(20),
+	 		LAST_OPERATOR VARCHAR(255),
+			LAST_OPERATED_TIME DATETIME,
+			
+			INDEX IX_M_AI_IMEI(IMEI),
+			INDEX IX_M_AI_APP_NAME(APP_NAME),
+			INDEX IX_M_AI_PNAME(PACKAGE_NAME),
+			INDEX IX_M_AI_VNAME(VERSION_NAME),
+			INDEX IX_M_AI_UDTIME(UPDATE_TIME),
+			INDEX IX_M_AI_ULTIME(UPLOAD_TIME),
+			INDEX IX_M_AI_EP1(EXTEND_PROP1),
+			INDEX IX_M_AI_EP2(EXTEND_PROP2),
+			INDEX IX_M_AI_EP3(EXTEND_PROP3)
+		)ENGINE=INNODB  DEFAULT CHARSET=UTF8 DEFAULT COLLATE=UTF8_BIN;
+	]]>
+	</sql>
+	 -->
+</mapper>

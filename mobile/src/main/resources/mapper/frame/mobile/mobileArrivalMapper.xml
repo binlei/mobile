@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.jshuabo.mobile.server.dao.mobile.IMobileArrivalMapper">
+	<resultMap type="MobileArrival" id="mobileArrivalResultMap">
+		<id property="id" column="ID" />
+		<result property="imei" column="IMEI" />
+		<result property="imsi" column="IMSI" />
+		<result property="arrivalTime" column="ARRIVAL_TIME" />
+		<result property="uploadTime" column="UPLOAD_TIME" />
+		<result property="simOperator" column="SIM_OPERATOR" />
+		<result property="phoneNum" column="PHONE_NUM" />
+		<result property="kind" column="KIND" />
+		<result property="extendProp1" column="EXTEND_PROP1" />
+		<result property="extendProp2" column="EXTEND_PROP2" />
+		<result property="extendProp3" column="EXTEND_PROP3" />
+		<result property="extendProp4" column="EXTEND_PROP4" />
+		<result property="extendProp5" column="EXTEND_PROP5" />
+
+		<result property="info.creatorId" column="CREATOR_ID" />
+		<result property="info.creator" column="CREATOR" />
+		<result property="info.createdTime" column="CREATED_TIME" />
+		<result property="info.lastOperatorId" column="LAST_OPERATOR_ID" />
+		<result property="info.lastOperator" column="LAST_OPERATOR" />
+		<result property="info.lastOperatedTime" column="LAST_OPERATED_TIME" />
+	</resultMap>
+
+	<sql id="sql_select">
+		SELECT ID,IMEI,IMSI,ARRIVAL_TIME,UPLOAD_TIME,SIM_OPERATOR,PHONE_NUM,KIND,EXTEND_PROP1,EXTEND_PROP2,EXTEND_PROP5 FROM T_MOBILE_ARRIVAL_PROCESSED
+	</sql>
+	
+	<sql id="sql_where">
+		WHERE 1=1
+		<if test="q != '' and q != null">
+	    	AND IMEI = #{q}
+	  	</if>
+		<if test="imei != '' and imei != null">
+			AND IMEI = #{imei}
+		</if>
+		<if test="extendProp4 != '' and extendProp4 !=null">
+	    	AND EXTEND_PROP4 IN
+	    	<foreach item="item" index="index" collection="extendProp4"   
+                   open="(" separator="," close=")">  
+                   #{item}  
+           	</foreach>
+	  	</if>
+		<if test="extendProp2 != '' and extendProp2 != null">
+			AND EXTEND_PROP2 =#{extendProp2}
+		</if>
+		<if test="simOperator != '' and simOperator != null">
+			AND SIM_OPERATOR =#{simOperator}
+		</if>
+		<if test="kind != '' and kind != null">
+			AND KIND =#{kind}
+		</if>
+
+		<if test="uploadTime_from != '' and uploadTime_from != null">
+	    	AND UPLOAD_TIME &gt;= CONCAT(#{uploadTime_from},' 00:00:00' )
+	  	</if>
+	  	<if test="uploadTime_to != '' and uploadTime_to != null">
+	    	AND UPLOAD_TIME &lt;= CONCAT(#{uploadTime_to},' 23:59:59' )
+	  	</if>
+	</sql>
+	
+	<select id="page" parameterType="map" resultType="MobileArrival"
+		resultMap="mobileArrivalResultMap">
+		<include refid="sql_select"/>
+		<include refid="sql_where"/>
+		<choose>
+		  		<when test="sortOrder != null">
+		  			ORDER BY ${sortOrder}
+		  		</when>
+		  		<otherwise>
+		  			ORDER BY UPLOAD_TIME DESC
+		  		</otherwise>
+		  	</choose>
+		LIMIT #{offset}, #{rows}
+	</select>
+
+	<select id="total" parameterType="map" resultType="Long">
+		SELECT count(*) FROM T_MOBILE_ARRIVAL_PROCESSED
+		<include refid="sql_where"/>
+	</select>
+
+	<!-- 导出 -->
+	<select id="exportAll" parameterType="map" resultType="MobileArrival"
+		resultMap="mobileArrivalResultMap">
+		<include refid="sql_select"/>
+		<include refid="sql_where"/>
+		LIMIT 0,100000
+	</select>
+
+	<select id="exportSelections" resultType="MobileArrival"
+		resultMap="mobileArrivalResultMap">
+		<include refid="sql_select"/> 
+		WHERE ID IN
+		<foreach item="item" index="index" collection="list" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+	</select>
+
+	<sql id="sql_topN">
+		WHERE 1=1
+		<if test="extendProp4 != '' and extendProp4 !=null">
+	    	AND EXTEND_PROP4 IN
+	    	<foreach item="item" index="index" collection="extendProp4"   
+                   open="(" separator="," close=")">  
+                   #{item}  
+           	</foreach>
+	  	</if>
+	</sql>
+	
+	<sql id="sql_statics">
+		<if test="startTime != '' and startTime != null">
+			AND UPLOAD_TIME &gt;= #{startTime}
+		</if>
+		<if test="endTime != '' and endTime != null">
+			AND UPLOAD_TIME &lt; #{endTime}
+		</if>
+	</sql>
+	<!-- 日到达 -->
+	<select id="dayArrival" parameterType="map" resultType="ChartEntity">
+		SELECT DATE_FORMAT(UPLOAD_TIME,'%Y-%m-%d') xAxis,COUNT(*) yData FROM
+		T_MOBILE_ARRIVAL_PROCESSED
+		<include refid="sql_topN"/>
+		<include refid="sql_statics"/>
+		GROUP BY
+		xAxis ORDER BY NULL
+	</select>
+
+	<!-- 日到达Top N -->
+	<select id="dayArrivalTop" parameterType="map" resultType="ChartEntity">
+		SELECT DATE_FORMAT(UPLOAD_TIME,'%Y-%m-%d') xAxis,COUNT(*) yData FROM
+		T_MOBILE_ARRIVAL_PROCESSED 
+		<include refid="sql_topN"/>
+		GROUP BY
+		xAxis ORDER BY yData DESC
+		LIMIT
+		0,10
+	</select>
+
+	<!-- 月到达 -->
+	<select id="monthArrival" parameterType="map" resultType="ChartEntity">
+		SELECT DATE_FORMAT(UPLOAD_TIME,'%Y-%m') xAxis,COUNT(*) yData FROM
+		T_MOBILE_ARRIVAL_PROCESSED
+		<include refid="sql_topN"/>
+		<include refid="sql_statics"/>
+		GROUP BY
+		xAxis ORDER BY NULL
+	</select>
+
+	<!-- 月到达Top N -->
+	<select id="monthArrivalTop" parameterType="map" resultType="ChartEntity">
+		SELECT DATE_FORMAT(UPLOAD_TIME,'%Y-%m') xAxis,COUNT(*) yData FROM
+		T_MOBILE_ARRIVAL_PROCESSED
+		<include refid="sql_topN"/>
+		GROUP BY
+		xAxis ORDER BY yData DESC
+		LIMIT 0,10
+	</select>
+
+	<!-- 季到达 -->
+	<select id="seasonArrival" parameterType="map" resultType="ChartEntity">
+		SELECT CONCAT(DATE_FORMAT(a.UPLOAD_TIME,
+		'%Y'),'年第',FLOOR((DATE_FORMAT(a.UPLOAD_TIME, '%m ')+2)/3),'季度')
+		xAxis,COUNT(*) yData
+		FROM T_MOBILE_ARRIVAL_PROCESSED a
+		<include refid="sql_topN"/>
+		<include refid="sql_statics"/>
+		GROUP BY
+		xAxis ORDER BY NULL
+	</select>
+
+	<!-- 季到达Top N -->
+	<select id="seasonArrivalTop" parameterType="map" resultType="ChartEntity">
+		SELECT CONCAT(DATE_FORMAT(a.UPLOAD_TIME,
+		'%Y'),'年第',FLOOR((DATE_FORMAT(a.UPLOAD_TIME, '%m ')+2)/3),'季度')
+		xAxis,COUNT(*) yData
+		FROM T_MOBILE_ARRIVAL_PROCESSED a
+		<include refid="sql_topN"/>
+		GROUP BY
+		xAxis ORDER BY yData DESC
+		LIMIT 0,10
+	</select>
+
+	<!-- 年到达 -->
+	<select id="yearArrival" parameterType="map" resultType="ChartEntity">
+		SELECT DATE_FORMAT(UPLOAD_TIME,'%Y') xAxis,COUNT(*) yData FROM
+		T_MOBILE_ARRIVAL_PROCESSED
+		<include refid="sql_topN"/>
+		<include refid="sql_statics"/>
+		GROUP BY
+		xAxis ORDER BY NULL
+	</select>
+
+	<!-- 年到达Top N -->
+	<select id="yearArrivalTop" parameterType="map" resultType="ChartEntity">
+		SELECT DATE_FORMAT(UPLOAD_TIME,'%Y') xAxis,COUNT(*) yData FROM
+		T_MOBILE_ARRIVAL_PROCESSED
+		<include refid="sql_topN"/>
+		GROUP BY
+		xAxis ORDER BY yData DESC
+		LIMIT 0,10
+	</select>
+
+
+	<select id="load" parameterType="Long" resultType="MobileArrival"
+		resultMap="mobileArrivalResultMap">
+        <![CDATA[
+            SELECT * FROM T_MOBILE_ARRIVAL_PROCESSED WHERE ID = #{id} 
+        ]]>
+	</select>
+
+	<select id="loadAll" resultType="MobileArrival" resultMap="mobileArrivalResultMap">
+        <![CDATA[
+            SELECT * FROM T_MOBILE_ARRIVAL_PROCESSED
+        ]]>
+	</select>
+
+	<insert id="save" parameterType="MobileArrival"
+		useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO T_MOBILE_ARRIVAL (
+		ID,IMEI,IMSI,ARRIVAL_TIME,UPLOAD_TIME,SIM_OPERATOR,PHONE_NUM,KIND,EXTEND_PROP1,EXTEND_PROP2,
+		CREATOR_ID,CREATOR,CREATED_TIME
+		) VALUES (
+		#{id},#{imei},#{imsi},#{arrivalTime},#{uploadTime},#{simOperator},#{phoneNum},#{kind},#{extendProp1},#{extendProp2},
+		#{creatorId},#{creator},#{createdTime}
+		)
+	</insert>
+
+	<insert id="processRecord">
+		<![CDATA[
+			INSERT INTO T_MOBILE_ARRIVAL_PROCESSED(ID, IMEI, IMSI, ARRIVAL_TIME, UPLOAD_TIME, SIM_OPERATOR, PHONE_NUM, KIND, EXTEND_PROP1, EXTEND_PROP2, EXTEND_PROP3, CREATOR_ID, CREATOR, CREATED_TIME, LAST_OPERATOR_ID, LAST_OPERATOR, LAST_OPERATED_TIME, EXTEND_PROP4, EXTEND_PROP5)
+				SELECT a.ID, a.IMEI, a.IMSI, a.ARRIVAL_TIME, a.UPLOAD_TIME, a.SIM_OPERATOR, a.PHONE_NUM, a.KIND, a.EXTEND_PROP1, a.EXTEND_PROP2, a.EXTEND_PROP3, a.CREATOR_ID, a.CREATOR, a.CREATED_TIME, a.LAST_OPERATOR_ID, a.LAST_OPERATOR, a.LAST_OPERATED_TIME,'default','default' FROM T_MOBILE_ARRIVAL a WHERE 1=1
+					AND a.IMEI IS NOT NULL 
+					AND a.IMSI IS NOT NULL 
+					AND a.IMEI<>''
+					AND a.IMSI<>''
+					AND NOT EXISTS(SELECT 1 FROM T_MOBILE_ARRIVAL_PROCESSED b WHERE b.IMEI=a.IMEI)
+					AND a.id>=#{beginId} AND a.id<#{endId}
+					GROUP BY a.IMEI ORDER BY a.ID
+		 ]]>
+	</insert>
+	
+	<delete id="deleteOldRecord">
+	<![CDATA[
+		DELETE FROM T_MOBILE_ARRIVAL WHERE  IMEI='' OR IMEI IS NULL OR EXISTS(SELECT 1 FROM T_MOBILE_ARRIVAL_PROCESSED b WHERE T_MOBILE_ARRIVAL.IMEI=b.IMEI)
+	]]>
+	</delete>
+
+	<select id="getProcessRecordIds" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT MIN(a.ID) minId, MAX(a.ID) maxId FROM T_MOBILE_ARRIVAL a WHERE 1=1
+			AND a.UPLOAD_TIME>=#{beginTime} AND a.UPLOAD_TIME<#{endTime}
+			AND EXISTS(SELECT 1 FROM T_MOBILE_ARRIVAL_PROCESSED b WHERE a.ID>b.ID)
+		 ]]>
+	</select>
+
+	<update id="updateChannel">
+		<![CDATA[
+			UPDATE t_app_install_log a INNER JOIN t_mobile_arrival_processed b 
+			ON b.IMEI = a.IMEI AND b.EXTEND_PROP4 = 'default' AND b.UPLOAD_TIME>=#{beginTime} AND b.UPLOAD_TIME<#{endTime} SET
+			b.EXTEND_PROP5 = a.ORG_NAME,b.EXTEND_PROP4 = (SELECT c.CODE FROM m_organization c WHERE c.ID = a.ORG_ID);
+		]]>
+	</update>
+	
+	<!-- <sql id="createTable"> <![CDATA[ CREATE TABLE T_MOBILE_ARRIVAL ( ID 
+		BIGINT(20) NOT NULL PRIMARY KEY AUTO_INCREMENT, IMEI VARCHAR(255), IMSI VARCHAR(255), 
+		ARRIVAL_TIME DATETIME, UPLOAD_TIME DATETIME, SIM_OPERATOR VARCHAR(255), PHONE_NUM 
+		VARCHAR(255), KIND VARCHAR(25) DEFAULT 'NORMAL', EXTEND_PROP1 VARCHAR(255), 
+		EXTEND_PROP2 VARCHAR(255), EXTEND_PROP3 VARCHAR(20), CREATOR_ID BIGINT(20), 
+		CREATOR VARCHAR(255), CREATED_TIME DATETIME, LAST_OPERATOR_ID BIGINT(20), 
+		LAST_OPERATOR VARCHAR(255), LAST_OPERATED_TIME DATETIME,INDEX IX_M_OAR_ULTIME(UPLOAD_TIME) )ENGINE=INNODB DEFAULT 
+		CHARSET=UTF8 DEFAULT COLLATE=UTF8_BIN; ]]>
+</sql>
+	<sql id="createTable_PROCESSED"> 
+		<![CDATA[ CREATE TABLE T_MOBILE_ARRIVAL_PROCESSED ( ID BIGINT(20) NOT NULL 
+		PRIMARY KEY AUTO_INCREMENT, IMEI VARCHAR(255), IMSI VARCHAR(255), ARRIVAL_TIME 
+		DATETIME, UPLOAD_TIME DATETIME, SIM_OPERATOR VARCHAR(255), PHONE_NUM VARCHAR(255), 
+		KIND VARCHAR(25) DEFAULT 'NORMAL', EXTEND_PROP1 VARCHAR(255), EXTEND_PROP2 
+		VARCHAR(255), EXTEND_PROP3 VARCHAR(20), EXTEND_PROP4 VARCHAR(255), EXTEND_PROP5 
+		VARCHAR(255),CREATOR_ID BIGINT(20), CREATOR VARCHAR(255), CREATED_TIME DATETIME, 
+		LAST_OPERATOR_ID BIGINT(20), LAST_OPERATOR VARCHAR(255), LAST_OPERATED_TIME 
+		DATETIME, INDEX IX_M_AR_IMEI(IMEI), INDEX IX_M_AR_UTIME(UPLOAD_TIME), INDEX 
+		IX_M_AR_ATIME(ARRIVAL_TIME), INDEX IX_M_AR_EP1(EXTEND_PROP1), INDEX IX_M_AR_EP2(EXTEND_PROP2), 
+		INDEX IX_M_AR_EP3(EXTEND_PROP3) )ENGINE=INNODB DEFAULT CHARSET=UTF8 DEFAULT 
+		COLLATE=UTF8_BIN; ]]>
+	</sql> -->
+</mapper>

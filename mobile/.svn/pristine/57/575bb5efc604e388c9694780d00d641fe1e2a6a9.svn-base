@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.jshuabo.mobile.server.dao.mobile.IMobileBasicInfoMapper">
+	<resultMap type="MobileBasicInfo" id="mobileBasicInfoResultMap">
+		<id property="id" column="ID" />
+		<result property="imei" column="IMEI" />
+		<result property="mac" column="MAC" />
+		<result property="productionId" column="PRODUCTION_ID" />
+		<result property="ip" column="IP" />
+		<result property="kernel" column="KERNEL" />
+		<result property="model" column="MODEL" />
+		<result property="release" column="IRELEASE" />
+		<result property="sdk" column="SDK" />
+		<result property="rom" column="ROM" />
+		<result property="storeTime" column="STORE_TIME" />
+		<result property="uploadTime" column="UPLOAD_TIME" />
+		<result property="extendProp1" column="EXTEND_PROP1" />
+		<result property="extendProp2" column="EXTEND_PROP2" />
+		<result property="extendProp3" column="EXTEND_PROP3" />
+		<result property="extendProp4" column="EXTEND_PROP4" />
+		<result property="extendProp5" column="EXTEND_PROP5" />
+
+		<result property="info.creatorId" column="CREATOR_ID" />
+		<result property="info.creator" column="CREATOR" />
+		<result property="info.createdTime" column="CREATED_TIME" />
+		<result property="info.lastOperatorId" column="LAST_OPERATOR_ID" />
+		<result property="info.lastOperator" column="LAST_OPERATOR" />
+		<result property="info.lastOperatedTime" column="LAST_OPERATED_TIME" />
+	</resultMap>
+
+	<sql id="sql_select">
+		SELECT ID,IMEI,MAC,PRODUCTION_ID,IP,KERNEL,MODEL,IRELEASE,SDK,ROM,STORE_TIME,UPLOAD_TIME,EXTEND_PROP1,EXTEND_PROP2,EXTEND_PROP5 FROM T_MOBILE_BASIC_INFO_PROCESSED
+	</sql>
+	
+	<sql id="sql_where">
+		WHERE 1=1
+        	<if test="imei != '' and imei !=null">
+		    	AND IMEI = #{imei}
+		  	</if>
+		  	<if test="extendProp2 != '' and extendProp2 !=null">
+		    	AND EXTEND_PROP2 = #{extendProp2}
+		  	</if>
+		  	<if test="extendProp4 != '' and extendProp4 !=null">
+		    	AND EXTEND_PROP4 IN
+		    	<foreach item="item" index="index" collection="extendProp4"   
+	                   open="(" separator="," close=")">  
+	                   #{item}  
+	           	</foreach>
+		  	</if>
+		  	<if test="productionId != '' and productionId !=null">
+		    	AND PRODUCTION_ID = #{productionId}
+		  	</if>
+		  	
+		  	<if test="kernel != '' and kernel !=null">
+		    	AND KERNEL = #{kernel}
+		  	</if>
+		  	<if test="uploadTime_from != '' and uploadTime_from !=null">
+		    	AND UPLOAD_TIME &gt;= CONCAT(#{uploadTime_from},' 00:00:00' )
+		  	</if>
+		  	<if test="uploadTime_to != '' and uploadTime_to !=null">
+		    	AND UPLOAD_TIME &lt;= CONCAT(#{uploadTime_to},' 23:59:59' )
+		  	</if>
+	</sql>
+	<select id="page" parameterType="map" resultType="MobileBasicInfo" resultMap="mobileBasicInfoResultMap">
+        <include refid="sql_select"/>
+		<include refid="sql_where"/> 	
+        <if test="sortOrder != null">
+	    	ORDER BY ${sortOrder}
+	  	</if>
+        LIMIT #{offset}, #{rows}
+	</select>
+	
+	<select id="total" parameterType="map" resultType="Long" >
+            SELECT count(*) FROM T_MOBILE_BASIC_INFO_PROCESSED
+            <include refid="sql_where"/>			
+	</select>
+	
+	<select id="exportAll" parameterType="map" resultType="MobileBasicInfo" resultMap="mobileBasicInfoResultMap">
+            <include refid="sql_select"/> 
+            <include refid="sql_where"/>
+		  	LIMIT 0,100000	
+	</select>
+	
+	<select id="exportSelections" resultType="MobileBasicInfo" resultMap="mobileBasicInfoResultMap">
+            <include refid="sql_select"/>
+            WHERE ID IN
+            <foreach item="item" index="index" collection="list"   
+                     open="(" separator="," close=")">  
+                     #{item}  
+             </foreach> 
+	</select>
+	
+	<select id="queryoneByImei" parameterType="String" resultType="MobileBasicInfo" resultMap="mobileBasicInfoResultMap">
+		<![CDATA[
+            SELECT * FROM T_MOBILE_BASIC_INFO_PROCESSED WHERE IMEI = #{imei} 
+        ]]>
+	</select>
+	
+	<select id="load" parameterType="Long" resultType="MobileBasicInfo"
+		resultMap="mobileBasicInfoResultMap">
+        <![CDATA[
+            SELECT * FROM T_MOBILE_BASIC_INFO_PROCESSED WHERE ID = #{id} 
+        ]]>
+	</select>
+
+	<insert id="save" parameterType="MobileBasicInfo" useGeneratedKeys="true"
+		keyProperty="id">
+		INSERT INTO T_MOBILE_BASIC_INFO (
+			ID,IMEI,MAC,PRODUCTION_ID,IP,KERNEL,MODEL,IRELEASE,SDK,ROM,STORE_TIME,UPLOAD_TIME,EXTEND_PROP1,EXTEND_PROP2,
+			CREATOR_ID,CREATOR,CREATED_TIME
+		) VALUES (
+			#{id},#{imei},#{mac},#{productionId},#{ip},#{kernel},#{model},#{release},#{sdk},#{rom},#{storeTime},#{uploadTime},
+			#{extendProp1},#{extendProp2},#{creatorId},#{creator},#{createdTime}
+		)
+	</insert>
+
+	<insert id="processRecord">
+		<![CDATA[
+			INSERT INTO T_MOBILE_BASIC_INFO_PROCESSED(ID, PRODUCTION_ID, IMEI, MAC, IP, KERNEL, MODEL, IRELEASE, SDK, ROM, STORE_TIME, UPLOAD_TIME, EXTEND_PROP1, EXTEND_PROP2, EXTEND_PROP3, CREATOR_ID, CREATOR, CREATED_TIME, LAST_OPERATOR_ID, LAST_OPERATOR, LAST_OPERATED_TIME, EXTEND_PROP4, EXTEND_PROP5)
+				SELECT a.ID, a.PRODUCTION_ID, a.IMEI, a.MAC, a.IP, a.KERNEL, a.MODEL, a.IRELEASE, a.SDK, a.ROM, a.STORE_TIME, a.UPLOAD_TIME, a.EXTEND_PROP1, a.EXTEND_PROP2, a.EXTEND_PROP3, a.CREATOR_ID, a.CREATOR, a.CREATED_TIME, a.LAST_OPERATOR_ID, a.LAST_OPERATOR, a.LAST_OPERATED_TIME,'default','default' FROM T_MOBILE_BASIC_INFO a WHERE 1=1
+					AND a.IMEI IS NOT NULL 
+					AND a.IMEI<>''
+					AND NOT EXISTS(SELECT 1 FROM T_MOBILE_BASIC_INFO_PROCESSED b WHERE b.IMEI=a.IMEI)
+					AND a.id>=#{beginId} AND a.id<#{endId}
+					GROUP BY a.IMEI ORDER BY a.ID
+		 ]]>
+	</insert>
+	
+	<delete id="deleteOldRecord">
+	<![CDATA[
+		DELETE FROM T_MOBILE_BASIC_INFO WHERE  IMEI='' OR IMEI IS NULL OR EXISTS(SELECT 1 FROM T_MOBILE_BASIC_INFO_PROCESSED b WHERE T_MOBILE_BASIC_INFO.IMEI=b.IMEI)
+	]]>
+	</delete>
+	
+	<select id="getProcessRecordIds" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT MIN(a.ID) minId, MAX(a.ID) maxId FROM T_MOBILE_BASIC_INFO a WHERE 1=1
+			AND a.UPLOAD_TIME>=#{beginTime} AND a.UPLOAD_TIME<#{endTime}
+			AND EXISTS(SELECT 1 FROM T_MOBILE_BASIC_INFO_PROCESSED b WHERE a.ID>b.ID)
+		 ]]>
+	</select>
+	
+	<update id="updateChannel">
+		<![CDATA[
+			UPDATE t_app_install_log a INNER JOIN t_mobile_basic_info_processed b 
+			ON b.IMEI = a.IMEI AND b.EXTEND_PROP4 = 'default' AND b.UPLOAD_TIME>=#{beginTime} AND b.UPLOAD_TIME<#{endTime} SET
+			b.EXTEND_PROP5 = a.ORG_NAME,b.EXTEND_PROP4 = (SELECT c.CODE FROM m_organization c WHERE c.ID = a.ORG_ID);
+		]]>
+	</update>
+	
+	<!-- 
+	<sql id="createTable">
+	<![CDATA[
+		CREATE TABLE T_MOBILE_BASIC_INFO
+		(
+			ID BIGINT(20) NOT NULL PRIMARY KEY AUTO_INCREMENT,
+	 		PRODUCTION_ID VARCHAR(255),
+	 		IMEI VARCHAR(255),
+	 		MAC VARCHAR(255),
+	 		IP VARCHAR(255),
+	 		KERNEL VARCHAR(255),
+	 		MODEL VARCHAR(255),
+	 		IRELEASE VARCHAR(255),
+	 		SDK VARCHAR(255),
+	 		ROM VARCHAR(255),
+	 		STORE_TIME DATETIME,
+	 		UPLOAD_TIME DATETIME,
+			EXTEND_PROP1 VARCHAR(255),
+			EXTEND_PROP2 VARCHAR(255),
+			EXTEND_PROP3 VARCHAR(20),
+			CREATOR_ID BIGINT(20),
+	 		CREATOR VARCHAR(255),
+			CREATED_TIME DATETIME,
+			LAST_OPERATOR_ID BIGINT(20),
+	 		LAST_OPERATOR VARCHAR(255),
+			LAST_OPERATED_TIME DATETIME,
+			
+			INDEX IX_M_OBI_ULTIME(UPLOAD_TIME)
+		)ENGINE=INNODB  DEFAULT CHARSET=UTF8 DEFAULT COLLATE=UTF8_BIN;
+	]]>
+	</sql>
+
+	<sql id="createTable_processed">
+	<![CDATA[
+		CREATE TABLE T_MOBILE_BASIC_INFO_PROCESSED
+		(
+			ID BIGINT(20) NOT NULL PRIMARY KEY AUTO_INCREMENT,
+	 		PRODUCTION_ID VARCHAR(255),
+	 		IMEI VARCHAR(255),
+	 		MAC VARCHAR(255),
+	 		IP VARCHAR(255),
+	 		KERNEL VARCHAR(255),
+	 		MODEL VARCHAR(255),
+	 		IRELEASE VARCHAR(255),
+	 		SDK VARCHAR(255),
+	 		ROM VARCHAR(255),
+	 		STORE_TIME DATETIME,
+	 		UPLOAD_TIME DATETIME,
+			EXTEND_PROP1 VARCHAR(255),
+			EXTEND_PROP2 VARCHAR(255),
+			EXTEND_PROP3 VARCHAR(20),
+			EXTEND_PROP4 VARCHAR(255),
+			EXTEND_PROP5 VARCHAR(255),
+			
+			CREATOR_ID BIGINT(20),
+	 		CREATOR VARCHAR(255),
+			CREATED_TIME DATETIME,
+			LAST_OPERATOR_ID BIGINT(20),
+	 		LAST_OPERATOR VARCHAR(255),
+			LAST_OPERATED_TIME DATETIME,
+			
+			INDEX IX_M_BI_IMEI(IMEI),
+			INDEX IX_M_BI_UTIME(UPLOAD_TIME),
+			INDEX IX_M_BI_STIME(STORE_TIME),
+			INDEX IX_M_BI_EP1(EXTEND_PROP1),
+			INDEX IX_M_BI_EP2(EXTEND_PROP2),
+			INDEX IX_M_BI_EP3(EXTEND_PROP3)
+		)ENGINE=INNODB  DEFAULT CHARSET=UTF8 DEFAULT COLLATE=UTF8_BIN;
+	]]>
+	</sql>
+	 -->
+</mapper>
